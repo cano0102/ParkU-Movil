@@ -1,13 +1,19 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import '../models/access_record.dart';
+import '../models/parking_cell.dart';
 import '../models/parking_zone.dart';
 import '../models/vehicle.dart';
 
 /// Fuente única de datos de la app (en memoria).
 ///
-/// Sustituye a un backend real: guarda el estado de ocupación, el
-/// historial de movimientos y los vehículos actualmente dentro, para que
-/// las 9 pantallas del módulo de portería compartan la misma información.
+/// Sustituye a un backend real: guarda el mapa de celdas por zona, el
+/// historial de movimientos y los vehículos registrados, para que todas
+/// las pantallas del módulo de portería (incluido el mapa del
+/// parqueadero) compartan la misma información. La ocupación de cada
+/// zona se calcula siempre a partir de sus celdas, nunca de un contador
+/// aparte, para que no se puedan desincronizar.
 class ParkingRepository extends ChangeNotifier {
   ParkingRepository._internal() {
     _seed();
@@ -26,73 +32,90 @@ class ParkingRepository extends ChangeNotifier {
   bool modoSinConexion = true;
   int registrosPendientesSync = 3;
 
-  final List<ParkingZone> zonas = [
-    ParkingZone(etiqueta: 'Carros', tipo: VehicleType.carro, ocupados: 62, capacidad: 80),
-    ParkingZone(etiqueta: 'Motos', tipo: VehicleType.moto, ocupados: 44, capacidad: 60),
-    ParkingZone(etiqueta: 'Camiones', tipo: VehicleType.camion, ocupados: 9, capacidad: 10),
-  ];
+  late final List<ParkingZone> zonas;
 
   int get cuposDisponibles => zonas.fold(0, (sum, z) => sum + z.disponibles);
   int get cuposTotales => zonas.fold(0, (sum, z) => sum + z.capacidad);
 
   final Map<String, Vehicle> _vehiculosRegistrados = {};
-  final Map<String, ParkedVehicle> _dentro = {};
   final List<AccessRecord> historial = [];
 
-  int _celdaSeq = 25;
+  static const _rolesGenericos = ['Aprendiz', 'Instructor', 'Funcionario', 'Contratista', 'Visitante'];
+  static const _apellidosGenericos = [
+    'Gómez', 'Ramírez', 'Torres', 'Vélez', 'Ospina', 'Cardona', 'Zapata', 'Muñoz',
+    'Correa', 'Giraldo', 'Londoño', 'Betancur', 'Salazar', 'Marín', 'Henao',
+  ];
 
   void _seed() {
-    final registrados = <Vehicle>[
-      const Vehicle(
-        placa: 'WGY482',
-        tipo: VehicleType.carro,
-        marcaLinea: 'Mazda 3',
-        color: 'Gris',
-        soatVigente: true,
-        conductorNombre: 'Mateo Bejarano Mejía',
-        conductorRol: 'Aprendiz · Ficha 2879654',
-        conductorDocumento: 'C.C. 1.036.***.412',
-      ),
-      const Vehicle(
-        placa: 'JKD09E',
-        tipo: VehicleType.carro,
-        marcaLinea: 'Renault Logan',
-        color: 'Blanco',
-        soatVigente: true,
-        conductorNombre: 'Valery Restrepo',
-        conductorRol: 'Instructora · Sistemas',
-        conductorDocumento: 'C.C. 1.017.***.208',
-      ),
-      const Vehicle(
-        placa: 'HRT340',
-        tipo: VehicleType.moto,
-        marcaLinea: 'AKT NKD 125',
-        color: 'Negro',
-        soatVigente: true,
-        conductorNombre: 'Santiago Tobón',
-        conductorRol: 'Aprendiz · Ficha 2765310',
-        conductorDocumento: 'C.C. 1.028.***.771',
-      ),
-      const Vehicle(
-        placa: 'LNC55A',
-        tipo: VehicleType.camion,
-        marcaLinea: 'Chevrolet NHR',
-        color: 'Azul',
-        soatVigente: true,
-        conductorNombre: 'Carlos Quintero',
-        conductorRol: 'Proveedor · Logística',
-        conductorDocumento: 'C.C. 1.045.***.902',
-      ),
-    ];
-    for (final v in registrados) {
+    const wgy482 = Vehicle(
+      placa: 'WGY482',
+      tipo: VehicleType.carro,
+      marcaLinea: 'Mazda 3',
+      color: 'Gris',
+      soatVigente: true,
+      conductorNombre: 'Mateo Bejarano Mejía',
+      conductorRol: 'Aprendiz · Ficha 2879654',
+      conductorDocumento: 'C.C. 1.036.***.412',
+    );
+    const jkd09e = Vehicle(
+      placa: 'JKD09E',
+      tipo: VehicleType.carro,
+      marcaLinea: 'Renault Logan',
+      color: 'Blanco',
+      soatVigente: true,
+      conductorNombre: 'Valery Restrepo',
+      conductorRol: 'Instructora · Sistemas',
+      conductorDocumento: 'C.C. 1.017.***.208',
+    );
+    const hrt340 = Vehicle(
+      placa: 'HRT340',
+      tipo: VehicleType.moto,
+      marcaLinea: 'AKT NKD 125',
+      color: 'Negro',
+      soatVigente: true,
+      conductorNombre: 'Santiago Tobón',
+      conductorRol: 'Aprendiz · Ficha 2765310',
+      conductorDocumento: 'C.C. 1.028.***.771',
+    );
+    const lnc55a = Vehicle(
+      placa: 'LNC55A',
+      tipo: VehicleType.camion,
+      marcaLinea: 'Chevrolet NHR',
+      color: 'Azul',
+      soatVigente: true,
+      conductorNombre: 'Carlos Quintero',
+      conductorRol: 'Proveedor · Logística',
+      conductorDocumento: 'C.C. 1.045.***.902',
+    );
+
+    for (final v in [wgy482, jkd09e, hrt340, lnc55a]) {
       _vehiculosRegistrados[v.placa] = v;
     }
 
+    zonas = [
+      ParkingZone(
+        etiqueta: 'Carros',
+        tipo: VehicleType.carro,
+        celdas: _generarCeldas(prefijo: 'A', total: 80, ocupadas: 60, reservas: 2, mantenimiento: 1, destacadas: {24: wgy482}),
+      ),
+      ParkingZone(
+        etiqueta: 'Motos',
+        tipo: VehicleType.moto,
+        celdas: _generarCeldas(prefijo: 'B', total: 60, ocupadas: 42, reservas: 1, mantenimiento: 1, destacadas: {11: hrt340}),
+      ),
+      ParkingZone(
+        etiqueta: 'Camiones',
+        tipo: VehicleType.camion,
+        celdas: _generarCeldas(prefijo: 'C', total: 10, ocupadas: 7, mantenimiento: 1, destacadas: {3: lnc55a}),
+      ),
+    ];
+
+    // JKD09E ya salió: queda registrada pero sin celda activa.
     final ahora = DateTime.now();
     historial.addAll([
       AccessRecord(
         placa: 'WGY 482',
-        detalle: 'Ingreso · Celda A-24 · M. Bejarano',
+        detalle: 'Ingreso · Celda A24 · M. Bejarano',
         hora: ahora.subtract(const Duration(minutes: 3)),
         estado: AccessStatus.dentro,
       ),
@@ -110,7 +133,7 @@ class ParkingRepository extends ChangeNotifier {
       ),
       AccessRecord(
         placa: 'HRT 340',
-        detalle: 'Ingreso · Celda B-11 · S. Tobón',
+        detalle: 'Ingreso · Celda B11 · S. Tobón',
         hora: ahora.subtract(const Duration(minutes: 44)),
         estado: AccessStatus.dentro,
       ),
@@ -128,43 +151,107 @@ class ParkingRepository extends ChangeNotifier {
       ),
       AccessRecord(
         placa: 'LNC 55A',
-        detalle: 'Ingreso · Celda C-03 · Camión',
+        detalle: 'Ingreso · Celda C03 · Camión',
         hora: ahora.subtract(const Duration(hours: 1, minutes: 43)),
         estado: AccessStatus.dentro,
       ),
     ]);
+  }
 
-    _dentro['WGY482'] = ParkedVehicle(
-      placa: 'WGY 482',
-      conductorNombre: 'Mateo Bejarano Mejía',
-      celda: 'A-24',
-      horaIngreso: ahora.subtract(const Duration(minutes: 3)),
-    );
-    _dentro['HRT340'] = ParkedVehicle(
-      placa: 'HRT 340',
-      conductorNombre: 'Santiago Tobón',
-      celda: 'B-11',
-      horaIngreso: ahora.subtract(const Duration(minutes: 44)),
-    );
-    _dentro['LNC55A'] = ParkedVehicle(
-      placa: 'LNC 55A',
-      conductorNombre: 'Carlos Quintero',
-      celda: 'C-03',
-      horaIngreso: ahora.subtract(const Duration(hours: 1, minutes: 43)),
-    );
-    // JKD09E ya salió, no queda "dentro".
+  /// Genera las celdas de una zona. Las posiciones en [destacadas] quedan
+  /// ocupadas por ese vehículo (para que la historia de la demo cuadre con
+  /// el resto de la app); el resto de ocupantes y bloqueos se reparten de
+  /// forma determinística (semilla fija) para que el mapa no cambie entre
+  /// reconstrucciones de la pantalla.
+  List<ParkingCell> _generarCeldas({
+    required String prefijo,
+    required int total,
+    required int ocupadas,
+    int reservas = 0,
+    int mantenimiento = 0,
+    Map<int, Vehicle> destacadas = const {},
+  }) {
+    final random = Random(prefijo.codeUnitAt(0) * 97 + total);
+
+    final ocupadasIdx = <int>{...destacadas.keys};
+    while (ocupadasIdx.length < ocupadas) {
+      ocupadasIdx.add(random.nextInt(total) + 1);
+    }
+
+    final bloqueadasIdx = <int>{};
+    while (bloqueadasIdx.length < reservas + mantenimiento) {
+      final idx = random.nextInt(total) + 1;
+      if (!ocupadasIdx.contains(idx)) bloqueadasIdx.add(idx);
+    }
+    final reservaIdx = bloqueadasIdx.take(reservas).toSet();
+
+    return List.generate(total, (i) {
+      final numero = i + 1;
+      final codigo = '$prefijo${numero.toString().padLeft(2, '0')}';
+
+      if (ocupadasIdx.contains(numero)) {
+        final destacado = destacadas[numero];
+        return ParkingCell(
+          codigo: codigo,
+          estado: CellStatus.ocupada,
+          placa: destacado != null ? formatea(destacado.placa) : _placaGenerica(random),
+          conductorNombre: destacado?.conductorNombre ?? _nombreGenerico(random),
+          conductorRol: destacado?.conductorRol ?? _rolesGenericos[random.nextInt(_rolesGenericos.length)],
+          desde: DateTime.now().subtract(Duration(minutes: 6 + random.nextInt(230))),
+        );
+      }
+      if (bloqueadasIdx.contains(numero)) {
+        return ParkingCell(codigo: codigo, estado: reservaIdx.contains(numero) ? CellStatus.reserva : CellStatus.mantenimiento);
+      }
+      return ParkingCell(codigo: codigo);
+    });
+  }
+
+  static String _placaGenerica(Random random) {
+    const letras = 'ABCEFGHJKLMNPQRSTUVWXYZ';
+    final l = List.generate(3, (_) => letras[random.nextInt(letras.length)]).join();
+    final n = (random.nextInt(900) + 100).toString();
+    return '$l $n';
+  }
+
+  String _nombreGenerico(Random random) {
+    const nombres = ['Juan', 'Laura', 'Andrés', 'Camila', 'Diego', 'Paula', 'Sebastián', 'Daniela', 'Julián', 'Natalia'];
+    return '${nombres[random.nextInt(nombres.length)]} ${_apellidosGenericos[random.nextInt(_apellidosGenericos.length)]}';
   }
 
   static String normaliza(String placa) => placa.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
   static String formatea(String placaNormalizada) {
-    if (placaNormalizada.length <= 3) return placaNormalizada;
-    return '${placaNormalizada.substring(0, 3)} ${placaNormalizada.substring(3)}';
+    final limpia = normaliza(placaNormalizada);
+    if (limpia.length <= 3) return limpia;
+    return '${limpia.substring(0, 3)} ${limpia.substring(3)}';
   }
 
   Vehicle? buscarVehiculo(String placa) => _vehiculosRegistrados[normaliza(placa)];
 
-  ParkedVehicle? buscarDentro(String placa) => _dentro[normaliza(placa)];
+  ParkingZone zonaDe(VehicleType tipo) => zonas.firstWhere((z) => z.tipo == tipo);
+
+  /// Busca la celda que ocupa actualmente una placa, en cualquier zona.
+  ParkingCell? celdaDePlaca(String placa) {
+    final norm = normaliza(placa);
+    for (final zona in zonas) {
+      for (final celda in zona.celdas) {
+        if (celda.esOcupada && normaliza(celda.placa ?? '') == norm) return celda;
+      }
+    }
+    return null;
+  }
+
+  ParkedVehicle? buscarDentro(String placa) {
+    final celda = celdaDePlaca(placa);
+    if (celda == null) return null;
+    return ParkedVehicle(
+      placa: celda.placa!,
+      conductorNombre: celda.conductorNombre ?? '—',
+      celda: celda.codigo,
+      horaIngreso: celda.desde ?? DateTime.now(),
+    );
+  }
 
   List<AccessRecord> historialFiltrado(String filtro) {
     final ahora = DateTime.now();
@@ -182,57 +269,56 @@ class ParkingRepository extends ChangeNotifier {
     }
   }
 
-  String registrarIngreso(Vehicle vehicle) {
-    final zona = zonas.firstWhere((z) => z.tipo == vehicle.tipo);
-    zona.ocupados = (zona.ocupados + 1).clamp(0, zona.capacidad);
-    _celdaSeq++;
-    final prefijo = vehicle.tipo == VehicleType.carro
-        ? 'A'
-        : vehicle.tipo == VehicleType.moto
-            ? 'B'
-            : 'C';
-    final celda = '$prefijo-${_celdaSeq.toString().padLeft(2, '0')}';
+  /// Registra el ingreso de [vehicle]. Si no se indica [celda], toma la
+  /// primera celda libre de su zona (fallback quando no se pasó por el
+  /// mapa). Devuelve el código de la celda asignada.
+  String registrarIngreso(Vehicle vehicle, {ParkingCell? celda}) {
+    final zona = zonaDe(vehicle.tipo);
+    final destino = celda ?? zona.celdas.firstWhere((c) => c.esLibre, orElse: () => zona.celdas.first);
     final placaFormateada = formatea(vehicle.placa);
 
-    _dentro[vehicle.placa] = ParkedVehicle(
-      placa: placaFormateada,
-      conductorNombre: vehicle.conductorNombre,
-      celda: celda,
-      horaIngreso: DateTime.now(),
-    );
+    destino.estado = CellStatus.ocupada;
+    destino.placa = placaFormateada;
+    destino.conductorNombre = vehicle.conductorNombre;
+    destino.conductorRol = vehicle.conductorRol;
+    destino.desde = DateTime.now();
 
     historial.insert(
       0,
       AccessRecord(
         placa: placaFormateada,
-        detalle: 'Ingreso · Celda $celda · ${vehicle.conductorNombre}',
+        detalle: 'Ingreso · Celda ${destino.codigo} · ${vehicle.conductorNombre}',
         hora: DateTime.now(),
         estado: AccessStatus.dentro,
       ),
     );
     notifyListeners();
-    return celda;
+    return destino.codigo;
   }
 
   void registrarSalida(String placa) {
-    final normalizada = normaliza(placa);
-    final parked = _dentro.remove(normalizada);
-    final placaFormateada = parked?.placa ?? formatea(normalizada);
-    final vehicle = _vehiculosRegistrados[normalizada];
-    if (vehicle != null) {
-      final zona = zonas.firstWhere((z) => z.tipo == vehicle.tipo);
-      zona.ocupados = (zona.ocupados - 1).clamp(0, zona.capacidad);
-    }
-    final permanencia = parked != null ? _formatDuration(parked.permanencia) : '--';
+    final celda = celdaDePlaca(placa);
+    final placaFormateada = celda?.placa ?? formatea(placa);
+    final permanencia = celda?.permanencia != null ? formatDuration(celda!.permanencia!) : '--';
+    final conductor = celda?.conductorNombre;
+
     historial.insert(
       0,
       AccessRecord(
         placa: placaFormateada,
-        detalle: 'Salida · $permanencia${parked != null ? ' · ${parked.conductorNombre}' : ''}',
+        detalle: 'Salida · $permanencia${conductor != null ? ' · $conductor' : ''}',
         hora: DateTime.now(),
         estado: AccessStatus.salio,
       ),
     );
+
+    if (celda != null) {
+      celda.estado = CellStatus.libre;
+      celda.placa = null;
+      celda.conductorNombre = null;
+      celda.conductorRol = null;
+      celda.desde = null;
+    }
     notifyListeners();
   }
 
@@ -240,7 +326,7 @@ class ParkingRepository extends ChangeNotifier {
     historial.insert(
       0,
       AccessRecord(
-        placa: formatea(normaliza(placa)),
+        placa: formatea(placa),
         detalle: 'Denegado · sin registro',
         hora: DateTime.now(),
         estado: AccessStatus.novedad,
@@ -250,20 +336,21 @@ class ParkingRepository extends ChangeNotifier {
   }
 
   void registrarVisitante(String placa) {
-    final zona = zonas.firstWhere((z) => z.tipo == VehicleType.carro);
-    zona.ocupados = (zona.ocupados + 1).clamp(0, zona.capacidad);
-    final placaFormateada = formatea(normaliza(placa));
-    _dentro[normaliza(placa)] = ParkedVehicle(
-      placa: placaFormateada,
-      conductorNombre: 'Visitante',
-      celda: 'D-VIS',
-      horaIngreso: DateTime.now(),
-    );
+    final zona = zonaDe(VehicleType.carro);
+    final destino = zona.celdas.firstWhere((c) => c.esLibre, orElse: () => zona.celdas.first);
+    final placaFormateada = formatea(placa);
+
+    destino.estado = CellStatus.ocupada;
+    destino.placa = placaFormateada;
+    destino.conductorNombre = 'Visitante';
+    destino.conductorRol = 'Visitante';
+    destino.desde = DateTime.now();
+
     historial.insert(
       0,
       AccessRecord(
         placa: placaFormateada,
-        detalle: 'Ingreso · Visitante · Zona D',
+        detalle: 'Ingreso · Visitante · Celda ${destino.codigo}',
         hora: DateTime.now(),
         estado: AccessStatus.dentro,
       ),
@@ -286,7 +373,7 @@ class ParkingRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  static String _formatDuration(Duration d) {
+  static String formatDuration(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes % 60;
     if (h > 0) return '$h h $m min';
