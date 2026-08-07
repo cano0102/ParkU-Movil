@@ -1,18 +1,19 @@
+import 'parking_cell.dart';
 import 'vehicle.dart';
 
-/// Ocupación de una zona del parqueadero (carros, motos o camiones).
+/// Una zona del parqueadero (carros, motos o camiones) y su mapa de celdas.
 class ParkingZone {
   final String etiqueta;
   final VehicleType tipo;
-  int ocupados;
-  final int capacidad;
+  final List<ParkingCell> celdas;
 
   ParkingZone({
     required this.etiqueta,
     required this.tipo,
-    required this.ocupados,
-    required this.capacidad,
+    required this.celdas,
   });
 
-  int get disponibles => capacidad - ocupados;
+  int get capacidad => celdas.length;
+  int get ocupados => celdas.where((c) => c.esOcupada).length;
+  int get disponibles => celdas.where((c) => c.esLibre).length;
 }
