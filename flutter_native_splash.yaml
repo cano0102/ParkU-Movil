@@ -1,7 +1,8 @@
 flutter_native_splash:
 
-  # Fondo de la pantalla
-  color: "#FFFFFF"
+  # Fondo — verde institucional SENA, para que el logo (que ya trae su
+  # propio fondo verde) se funda con la pantalla completa.
+  color: "#39A900"
 
   # Logo principal
   image: assets/images/logo.png
@@ -13,16 +14,10 @@ flutter_native_splash:
   ios: true
   web: false
 
-  #=========================
+  # =========================
   # Android 12+
-  #=========================
+  # =========================
   android_12:
-
-    # Fondo
-    color: "#FFFFFF"
-
-    # Logo
+    color: "#39A900"
     image: assets/images/logo.png
-
-    # Mismo color del fondo para evitar un círculo visible
-    icon_background_color: "#FFFFFF"
+    icon_background_color: "#39A900"
