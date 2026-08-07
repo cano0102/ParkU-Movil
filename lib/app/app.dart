@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'router.dart';
 import 'theme/app_theme.dart';
-
 
 /// Widget principal de la aplicación.
 /// StatelessWidget se utiliza porque este widget no cambia su estado.
@@ -19,36 +19,9 @@ class ParkUApp extends StatelessWidget {
       // Tema personalizado definido en app_theme.dart.
       theme: AppTheme.lightTheme,
 
-      // Pantalla inicial de la aplicación.
-      home: const HomePage(),
-    );
-  }
-}
-
-/// Pantalla principal (temporal).
-/// Más adelante podrás reemplazarla por LoginPage,
-/// SplashPage o DashboardPage.
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // Barra superior.
-      appBar: AppBar(
-        title: const Text('ParkU'),
-      ),
-
-      // Contenido de la pantalla.
-      body: const Center(
-        child: Text(
-          'Bienvenido a ParkU',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      // Ruta inicial y generador de rutas con nombre de la app.
+      initialRoute: AppRoutes.welcome,
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }

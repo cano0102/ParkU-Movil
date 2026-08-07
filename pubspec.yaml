@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -28,7 +30,7 @@ flutter:
     - assets/images/logo.png
 
 flutter_native_splash:
-  color: "#FFFFFF"
+  color: "#39A900"
   image: assets/images/logo.png
 
   fullscreen: true
@@ -38,6 +40,6 @@ flutter_native_splash:
   web: false
 
   android_12:
-    color: "#FFFFFF"
+    color: "#39A900"
     image: assets/images/logo.png
-    icon_background_color: "#FFFFFF"
+    icon_background_color: "#39A900"
