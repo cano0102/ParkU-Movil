@@ -191,9 +191,16 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('${zona.tipo.zona} · ${zona.etiqueta}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: Color(0xFF94A3B8))),
+                          Expanded(
+                            child: Text(
+                              '${zona.tipo.zona} · ${zona.etiqueta}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: Color(0xFF94A3B8)),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text('${zona.disponibles} libres', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFB3E6A1))),
                         ],
                       ),

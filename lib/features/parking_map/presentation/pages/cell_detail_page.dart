@@ -71,9 +71,18 @@ class CellDetailPage extends StatelessWidget {
                 children: [
                   Opacity(
                     opacity: 0.62,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
-                      child: _MiniGrid(celdas: zona.celdas),
+                    // OverflowBox: esta cuadrícula es solo un fondo decorativo
+                    // detrás del velo oscuro; en pantallas bajas puede pedir
+                    // más alto de lo que el Stack (con fit: expand) le da, así
+                    // que dejamos que se recorte en vez de forzar un layout
+                    // que rompa con overflow.
+                    child: OverflowBox(
+                      alignment: Alignment.topCenter,
+                      maxHeight: double.infinity,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
+                        child: _MiniGrid(celdas: zona.celdas),
+                      ),
                     ),
                   ),
                   Container(color: const Color(0xA60A0D11)),
@@ -90,7 +99,14 @@ class CellDetailPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text('${zona.tipo.zona} · ${zona.etiqueta}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white)),
+                        Expanded(
+                          child: Text(
+                            '${zona.tipo.zona} · ${zona.etiqueta}',
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -163,7 +179,14 @@ class CellDetailPage extends StatelessWidget {
                             children: [
                               const Icon(Icons.report, size: 20, color: AppColors.textSecondary),
                               const SizedBox(width: 8),
-                              Text('Novedad', style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary, fontSize: 14)),
+                              Flexible(
+                                child: Text(
+                                  'Novedad',
+                                  style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary, fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -178,7 +201,9 @@ class CellDetailPage extends StatelessWidget {
                             children: [
                               Icon(Icons.logout, size: 20),
                               SizedBox(width: 8),
-                              Text('Registrar salida'),
+                              Flexible(
+                                child: Text('Registrar salida', overflow: TextOverflow.ellipsis, maxLines: 1),
+                              ),
                             ],
                           ),
                         ),
