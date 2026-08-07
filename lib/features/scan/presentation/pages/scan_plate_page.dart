@@ -113,7 +113,15 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _RoundGlassButton(icon: Icons.close, onTap: () => Navigator.of(context).pop()),
-                      const Text('Escanear placa', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800)),
+                      const Flexible(
+                        child: Text(
+                          'Escanear placa',
+                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                       _RoundGlassButton(
                         icon: _flashOn ? Icons.flash_on : Icons.flash_off,
                         onTap: () => setState(() => _flashOn = !_flashOn),
@@ -124,7 +132,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
                 Expanded(
                   child: Center(
                     child: SizedBox(
-                      width: 322,
+                      width: (MediaQuery.sizeOf(context).width - 68).clamp(220.0, 380.0).toDouble(),
                       height: 150,
                       child: Stack(
                         children: [
@@ -196,12 +204,19 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.keyboard, color: Colors.white, size: 18),
-                              SizedBox(width: 8),
-                              Text('Digitar placa manualmente', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                              const Icon(Icons.keyboard, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Digitar placa manualmente',
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
                             ],
                           ),
                         ),

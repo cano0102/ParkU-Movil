@@ -56,9 +56,15 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final registros = _repo.historialFiltrado(_filtro);
-    final ingresos = registros.where((r) => r.estado == AccessStatus.dentro).length;
-    final salidas = registros.where((r) => r.estado == AccessStatus.salio).length;
-    final novedades = registros.where((r) => r.estado == AccessStatus.novedad).length;
+    final ingresos = registros
+        .where((r) => r.estado == AccessStatus.dentro)
+        .length;
+    final salidas = registros
+        .where((r) => r.estado == AccessStatus.salio)
+        .length;
+    final novedades = registros
+        .where((r) => r.estado == AccessStatus.novedad)
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -71,47 +77,99 @@ class _HistoryPageState extends State<HistoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Historial', style: AppTextStyles.heading2),
+                      Expanded(
+                        child: Text(
+                          'Historial',
+                          style: AppTextStyles.heading2,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.tune,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: ['Hoy', 'Ayer', '7 días'].map((f) {
-                      final seleccionado = f == _filtro;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () => setState(() => _filtro = f),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: seleccionado ? AppColors.primary : Colors.white,
-                              border: seleccionado ? null : Border.all(color: AppColors.border),
-                              borderRadius: BorderRadius.circular(999),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['Hoy', 'Ayer', '7 días'].map((f) {
+                        final seleccionado = f == _filtro;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(999),
+                            onTap: () => setState(() => _filtro = f),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: seleccionado
+                                    ? AppColors.primary
+                                    : Colors.white,
+                                border: seleccionado
+                                    ? null
+                                    : Border.all(color: AppColors.border),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                f,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: seleccionado
+                                      ? Colors.white
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
                             ),
-                            child: Text(f, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: seleccionado ? Colors.white : AppColors.textSecondary)),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      Expanded(child: _statCard('Ingresos', '$ingresos', AppColors.textPrimary)),
+                      Expanded(
+                        child: _statCard(
+                          'Ingresos',
+                          '$ingresos',
+                          AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: _statCard('Salidas', '$salidas', AppColors.textPrimary)),
+                      Expanded(
+                        child: _statCard(
+                          'Salidas',
+                          '$salidas',
+                          AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: _statCard('Novedades', '$novedades', AppColors.danger)),
+                      Expanded(
+                        child: _statCard(
+                          'Novedades',
+                          '$novedades',
+                          AppColors.danger,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -119,7 +177,14 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             Expanded(
               child: registros.isEmpty
-                  ? Center(child: Text('Sin movimientos en este periodo', style: AppTextStyles.body.copyWith(color: AppColors.textMuted)))
+                  ? Center(
+                      child: Text(
+                        'Sin movimientos en este periodo',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
                       itemCount: registros.length,
@@ -127,36 +192,82 @@ class _HistoryPageState extends State<HistoryPage> {
                       itemBuilder: (context, index) {
                         final r = registros[index];
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.border)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 13,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppColors.border),
+                          ),
                           child: Row(
                             children: [
                               Container(
                                 width: 36,
                                 height: 36,
-                                decoration: BoxDecoration(color: AppColors.neutralSoft, borderRadius: BorderRadius.circular(12)),
-                                child: const Icon(Icons.directions_car, size: 19, color: AppColors.textSecondary),
+                                decoration: BoxDecoration(
+                                  color: AppColors.neutralSoft,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.directions_car,
+                                  size: 19,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(r.placa, style: AppTextStyles.mono(size: 15, color: AppColors.textPrimary)),
+                                    Text(
+                                      r.placa,
+                                      style: AppTextStyles.mono(
+                                        size: 15,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text(r.detalle, style: AppTextStyles.small.copyWith(color: AppColors.textMuted)),
+                                    Text(
+                                      r.detalle,
+                                      style: AppTextStyles.small.copyWith(
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(TimeOfDay.fromDateTime(r.hora).format(context), style: AppTextStyles.mono(size: 12, color: AppColors.textSecondary)),
+                                  Text(
+                                    TimeOfDay.fromDateTime(
+                                      r.hora,
+                                    ).format(context),
+                                    style: AppTextStyles.mono(
+                                      size: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                                    decoration: BoxDecoration(color: _pillBg(r.estado), borderRadius: BorderRadius.circular(999)),
-                                    child: Text(r.estadoLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _pillFg(r.estado))),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 9,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _pillBg(r.estado),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      r.estadoLabel,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: _pillFg(r.estado),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -175,13 +286,20 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _statCard(String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppTextStyles.small),
           const SizedBox(height: 2),
-          Text(value, style: AppTextStyles.heading3.copyWith(fontSize: 22, color: color)),
+          Text(
+            value,
+            style: AppTextStyles.heading3.copyWith(fontSize: 22, color: color),
+          ),
         ],
       ),
     );

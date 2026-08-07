@@ -106,7 +106,14 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                       children: [
                         Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFB3E6A1), shape: BoxShape.circle)),
                         const SizedBox(width: 8),
-                        Text('Turno activo · Portería ${_repo.porteria} · ${_repo.turno}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                        Flexible(
+                          child: Text(
+                            'Turno activo · Portería ${_repo.porteria} · ${_repo.turno}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -136,14 +143,18 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                                 children: [
                                   Text('CUPOS DISPONIBLES', style: AppTextStyles.overline),
                                   const SizedBox(height: 2),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text('$disponibles', style: AppTextStyles.heading1.copyWith(fontSize: 44)),
-                                      const SizedBox(width: 6),
-                                      Text('/ $total', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
-                                    ],
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text('$disponibles', style: AppTextStyles.heading1.copyWith(fontSize: 44)),
+                                        const SizedBox(width: 6),
+                                        Text('/ $total', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -186,7 +197,14 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                               children: [
                                 const Icon(Icons.map_outlined, size: 16, color: AppColors.primaryDark),
                                 const SizedBox(width: 6),
-                                Text('Ver mapa del parqueadero', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.w800)),
+                                Flexible(
+                                  child: Text(
+                                    'Ver mapa del parqueadero',
+                                    style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.w800),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -218,9 +236,11 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   ),
                   const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('ÚLTIMOS MOVIMIENTOS', style: AppTextStyles.overline),
+                      Expanded(
+                        child: Text('ÚLTIMOS MOVIMIENTOS', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: widget.onVerTodo,
                         child: Text('Ver todo', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark)),

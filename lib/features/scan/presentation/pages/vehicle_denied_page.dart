@@ -80,9 +80,15 @@ class VehicleDeniedPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                     decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(18)),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(placaFormateada, style: AppTextStyles.plate(size: 30, color: Colors.white)),
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(placaFormateada, style: AppTextStyles.plate(size: 30, color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(999)),
@@ -122,14 +128,18 @@ class VehicleDeniedPage extends StatelessWidget {
                       children: [
                         Text('CUPOS PARA VISITANTES', style: AppTextStyles.overline),
                         const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text('7', style: AppTextStyles.heading1.copyWith(fontSize: 32)),
-                            const SizedBox(width: 6),
-                            Text('disponibles en Zona D', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
-                          ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text('7', style: AppTextStyles.heading1.copyWith(fontSize: 32)),
+                              const SizedBox(width: 6),
+                              Text('disponibles en Zona D', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -166,7 +176,9 @@ class VehicleDeniedPage extends StatelessWidget {
                         children: [
                           Icon(Icons.block, size: 22),
                           SizedBox(width: 10),
-                          Text('Denegar ingreso'),
+                          Flexible(
+                            child: Text('Denegar ingreso', overflow: TextOverflow.ellipsis, maxLines: 1),
+                          ),
                         ],
                       ),
                     ),

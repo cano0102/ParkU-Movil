@@ -79,7 +79,9 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                     icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  Text('Confirmar placa', style: AppTextStyles.title),
+                  Expanded(
+                    child: Text('Confirmar placa', style: AppTextStyles.title, overflow: TextOverflow.ellipsis, maxLines: 1),
+                  ),
                 ],
               ),
             ),
@@ -111,9 +113,11 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('PLACA DETECTADA', style: AppTextStyles.overline),
+                            Expanded(
+                              child: Text('PLACA DETECTADA', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
+                            ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                               decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
@@ -127,14 +131,18 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                           borderRadius: BorderRadius.circular(18),
                           child: Container(
                             height: 76,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(border: Border.all(color: AppColors.primary, width: 2), borderRadius: BorderRadius.circular(18)),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(placaFormateada, style: AppTextStyles.plate(size: 32)),
-                                const SizedBox(width: 14),
-                                const Icon(Icons.edit, color: AppColors.primary, size: 22),
-                              ],
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(placaFormateada, style: AppTextStyles.plate(size: 32)),
+                                  const SizedBox(width: 14),
+                                  const Icon(Icons.edit, color: AppColors.primary, size: 22),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -197,24 +205,33 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         side: const BorderSide(color: AppColors.border, width: 1.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Repetir', style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary)),
+                      child: Text(
+                        'Repetir',
+                        style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
                       onPressed: _verificar,
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Verificar vehículo'),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
+                          const Flexible(
+                            child: Text('Verificar vehículo', overflow: TextOverflow.ellipsis, maxLines: 1),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, size: 20),
                         ],
                       ),
                     ),

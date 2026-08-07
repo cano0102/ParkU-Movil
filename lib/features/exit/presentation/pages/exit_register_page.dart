@@ -71,7 +71,9 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
               child: Row(
                 children: [
                   IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text('Registrar salida', style: AppTextStyles.title),
+                  Expanded(
+                    child: Text('Registrar salida', style: AppTextStyles.title, overflow: TextOverflow.ellipsis, maxLines: 1),
+                  ),
                 ],
               ),
             ),
@@ -112,9 +114,15 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(_encontrado!.placa, style: AppTextStyles.plate(size: 26)),
+                              Expanded(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(_encontrado!.placa, style: AppTextStyles.plate(size: 26)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
@@ -171,7 +179,9 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
                   children: [
                     Icon(Icons.logout, size: 22),
                     SizedBox(width: 10),
-                    Text('Confirmar salida'),
+                    Flexible(
+                      child: Text('Confirmar salida', overflow: TextOverflow.ellipsis, maxLines: 1),
+                    ),
                   ],
                 ),
               ),

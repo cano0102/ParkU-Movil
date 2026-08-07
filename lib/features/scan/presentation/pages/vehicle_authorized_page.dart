@@ -70,9 +70,15 @@ class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                     decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(18)),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(ParkingRepository.formatea(v.placa), style: AppTextStyles.plate(size: 30, color: Colors.white)),
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(ParkingRepository.formatea(v.placa), style: AppTextStyles.plate(size: 30, color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(999)),
@@ -183,7 +189,9 @@ class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
                         children: [
                           Icon(Icons.local_parking, size: 22),
                           SizedBox(width: 10),
-                          Text('Elegir celda y registrar ingreso'),
+                          Flexible(
+                            child: Text('Elegir celda', overflow: TextOverflow.ellipsis, maxLines: 1),
+                          ),
                         ],
                       ),
                     ),
