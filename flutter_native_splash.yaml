@@ -1,0 +1,28 @@
+flutter_native_splash:
+
+  # Fondo de la pantalla
+  color: "#FFFFFF"
+
+  # Logo principal
+  image: assets/images/logo.png
+
+  # Pantalla completa
+  fullscreen: true
+
+  android: true
+  ios: true
+  web: false
+
+  #=========================
+  # Android 12+
+  #=========================
+  android_12:
+
+    # Fondo
+    color: "#FFFFFF"
+
+    # Logo
+    image: assets/images/logo.png
+
+    # Mismo color del fondo para evitar un círculo visible
+    icon_background_color: "#FFFFFF"
