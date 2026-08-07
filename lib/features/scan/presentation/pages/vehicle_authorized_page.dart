@@ -3,7 +3,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
-import '../../../home/presentation/pages/home_shell.dart';
+import '../../../parking_map/presentation/pages/parking_map_page.dart';
 
 class VehicleAuthorizedPage extends StatefulWidget {
   final Vehicle vehicle;
@@ -15,16 +15,9 @@ class VehicleAuthorizedPage extends StatefulWidget {
 }
 
 class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
-  String? _celdaAsignada;
-
-  void _registrarIngreso() {
-    final celda = ParkingRepository.instance.registrarIngreso(widget.vehicle);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ingreso registrado · Celda $celda')),
-    );
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeShell()),
-      (route) => false,
+  void _elegirCeldaYRegistrar() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ParkingMapPage(vehicleParaAsignar: widget.vehicle)),
     );
   }
 
@@ -149,29 +142,28 @@ class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.primarySoftBorder)),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.local_parking, color: AppColors.primaryDark, size: 26),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('CELDA ASIGNADA', style: AppTextStyles.overline.copyWith(color: AppColors.primaryDark)),
-                              Text(_celdaAsignada ?? '${v.tipo.zona.substring(5)}-XX · ${v.tipo.zona}', style: AppTextStyles.heading3),
-                            ],
+                  InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: _elegirCeldaYRegistrar,
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.primarySoftBorder)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_parking, color: AppColors.primaryDark, size: 26),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('CELDA', style: AppTextStyles.overline.copyWith(color: AppColors.primaryDark)),
+                                Text('Se elige en el mapa del parqueadero', style: AppTextStyles.bodyBold.copyWith(color: AppColors.primaryDark, fontSize: 15)),
+                              ],
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Selecciona una celda disponible en el mapa del parqueadero')),
-                          ),
-                          child: Text('Cambiar', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, decoration: TextDecoration.underline)),
-                        ),
-                      ],
+                          const Icon(Icons.chevron_right, color: AppColors.primaryDark),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -185,13 +177,13 @@ class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _registrarIngreso,
+                      onPressed: _elegirCeldaYRegistrar,
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.login, size: 22),
+                          Icon(Icons.local_parking, size: 22),
                           SizedBox(width: 10),
-                          Text('Registrar ingreso'),
+                          Text('Elegir celda y registrar ingreso'),
                         ],
                       ),
                     ),
