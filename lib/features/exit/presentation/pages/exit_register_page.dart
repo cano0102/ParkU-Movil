@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
-import '../../../../core/models/access_record.dart';
+import '../../../../core/models/access_record.dart' show ParkedVehicle;
 
 class ExitRegisterPage extends StatefulWidget {
   const ExitRegisterPage({super.key});
@@ -35,14 +35,10 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
   }
 
   void _escanearRapido() {
-    final placasDentro = _repo.historial
-        .where((r) => r.estado == AccessStatus.dentro)
-        .map((r) => r.placa)
-        .toSet()
-        .toList();
-    if (placasDentro.isEmpty) return;
-    final placa = placasDentro[Random().nextInt(placasDentro.length)];
-    _controller.text = ParkingRepository.normaliza(placa);
+    final ocupadas = _repo.zonas.expand((z) => z.celdas).where((c) => c.esOcupada).toList();
+    if (ocupadas.isEmpty) return;
+    final celda = ocupadas[Random().nextInt(ocupadas.length)];
+    _controller.text = ParkingRepository.normaliza(celda.placa!);
     _buscar(_controller.text);
   }
 

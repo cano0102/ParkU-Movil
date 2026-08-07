@@ -6,6 +6,7 @@ import '../../../../core/models/access_record.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../exit/presentation/pages/exit_register_page.dart';
+import '../../../parking_map/presentation/pages/parking_map_page.dart';
 import '../../../scan/presentation/pages/scan_plate_page.dart';
 
 class HomeDashboardPage extends StatefulWidget {
@@ -173,6 +174,23 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                           if (i > 0) ...[const SizedBox(height: 12), const Divider(height: 1, color: AppColors.divider), const SizedBox(height: 12)],
                           _ZonaRow(zona: _repo.zonas[i], icon: _iconForTipo(_repo.zonas[i].tipo)),
                         ],
+                        const SizedBox(height: 14),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ParkingMapPage())),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.map_outlined, size: 16, color: AppColors.primaryDark),
+                                const SizedBox(width: 6),
+                                Text('Ver mapa del parqueadero', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -256,7 +274,7 @@ class _ZonaRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: isAlmostFull ? AppColors.warning : AppColors.primary),
         const SizedBox(width: 12),
-        Expanded(child: Text('${zona.etiqueta == 'Carros' ? 'Zona A' : zona.etiqueta == 'Motos' ? 'Zona B' : 'Zona C'} · ${zona.etiqueta}', style: AppTextStyles.bodyBold)),
+        Expanded(child: Text('${zona.tipo.zona} · ${zona.etiqueta}', style: AppTextStyles.bodyBold)),
         Text('${zona.ocupados}/${zona.capacidad}', style: AppTextStyles.mono(size: 14)),
       ],
     );
