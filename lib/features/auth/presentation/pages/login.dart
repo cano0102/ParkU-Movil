@@ -84,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: _RolOpcion(icono: Icons.security, etiqueta: 'Guarda', seleccionado: !_esConductor, onTap: () => _elegirRol(false))),
+                      Expanded(child: _RolOpcion(icono: Icons.security, etiqueta: 'Vigilante', seleccionado: !_esConductor, onTap: () => _elegirRol(false))),
                       const SizedBox(width: 10),
                       Expanded(child: _RolOpcion(icono: Icons.directions_car, etiqueta: 'Conductor', seleccionado: _esConductor, onTap: () => _elegirRol(true))),
                     ],
