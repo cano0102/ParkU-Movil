@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login.dart';
+import '../features/driver/presentation/pages/driver_home_shell.dart';
 import '../features/home/presentation/pages/home_shell.dart';
 import '../features/home/presentation/pages/welcome_page.dart';
 
@@ -12,6 +13,7 @@ class AppRoutes {
   static const String welcome = '/';
   static const String login = '/login';
   static const String home = '/home';
+  static const String driverHome = '/driver-home';
 }
 
 class AppRouter {
@@ -25,6 +27,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => const HomeShell());
+      case AppRoutes.driverHome:
+        return MaterialPageRoute(builder: (_) => const DriverHomeShell());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

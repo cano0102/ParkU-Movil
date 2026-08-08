@@ -28,8 +28,15 @@ class ParkingRepository extends ChangeNotifier {
   final String porteria = 'Norte';
   final String turno = '6:00 – 14:00';
 
+  // Conductor con sesión activa (para el rol "Conductor" de la app).
+  final String conductorNombre = 'Mateo Bejarano Mejía';
+  final String conductorCorreo = 'mbejarano@sena.edu.co';
+  final String conductorDocumento = 'C.C. 1.036.***.412';
+  final String conductorRolTexto = 'Aprendiz · Ficha 2879654';
+
   bool alertasNoAutorizados = true;
   bool modoSinConexion = true;
+  bool alertasVehiculoConductor = true;
   int registrosPendientesSync = 3;
 
   late final List<ParkingZone> zonas;
@@ -229,6 +236,40 @@ class ParkingRepository extends ChangeNotifier {
 
   Vehicle? buscarVehiculo(String placa) => _vehiculosRegistrados[normaliza(placa)];
 
+  /// Vehículos registrados a nombre del conductor con sesión activa.
+  List<Vehicle> misVehiculos() => _vehiculosRegistrados.values.where((v) => v.conductorNombre == conductorNombre).toList();
+
+  /// Historial de movimientos de los vehículos del conductor actual.
+  List<AccessRecord> historialDeConductor() {
+    final placas = misVehiculos().map((v) => normaliza(v.placa)).toSet();
+    return historial.where((r) => placas.contains(normaliza(r.placa))).toList();
+  }
+
+  /// Registra un nuevo vehículo a nombre del conductor con sesión activa.
+  /// Devuelve false si la placa ya existe en el sistema.
+  bool registrarVehiculo({
+    required String placa,
+    required VehicleType tipo,
+    required String marcaLinea,
+    required String color,
+    required bool soatVigente,
+  }) {
+    final norm = normaliza(placa);
+    if (_vehiculosRegistrados.containsKey(norm)) return false;
+    _vehiculosRegistrados[norm] = Vehicle(
+      placa: norm,
+      tipo: tipo,
+      marcaLinea: marcaLinea,
+      color: color,
+      soatVigente: soatVigente,
+      conductorNombre: conductorNombre,
+      conductorRol: conductorRolTexto,
+      conductorDocumento: conductorDocumento,
+    );
+    notifyListeners();
+    return true;
+  }
+
   ParkingZone zonaDe(VehicleType tipo) => zonas.firstWhere((z) => z.tipo == tipo);
 
   /// Busca la celda que ocupa actualmente una placa, en cualquier zona.
@@ -253,19 +294,24 @@ class ParkingRepository extends ChangeNotifier {
     );
   }
 
-  List<AccessRecord> historialFiltrado(String filtro) {
+  List<AccessRecord> historialFiltrado(String filtro) => _filtrarPorFecha(historial, filtro);
+
+  /// Historial del conductor actual, filtrado por rango de fecha.
+  List<AccessRecord> historialDeConductorFiltrado(String filtro) => _filtrarPorFecha(historialDeConductor(), filtro);
+
+  List<AccessRecord> _filtrarPorFecha(List<AccessRecord> registros, String filtro) {
     final ahora = DateTime.now();
     final hoyInicio = DateTime(ahora.year, ahora.month, ahora.day);
     switch (filtro) {
       case 'Ayer':
         final ayerInicio = hoyInicio.subtract(const Duration(days: 1));
-        return historial.where((r) => r.hora.isAfter(ayerInicio) && r.hora.isBefore(hoyInicio)).toList();
+        return registros.where((r) => r.hora.isAfter(ayerInicio) && r.hora.isBefore(hoyInicio)).toList();
       case '7 días':
         final hace7 = ahora.subtract(const Duration(days: 7));
-        return historial.where((r) => r.hora.isAfter(hace7)).toList();
+        return registros.where((r) => r.hora.isAfter(hace7)).toList();
       case 'Hoy':
       default:
-        return historial.where((r) => r.hora.isAfter(hoyInicio)).toList();
+        return registros.where((r) => r.hora.isAfter(hoyInicio)).toList();
     }
   }
 
@@ -365,6 +411,11 @@ class ParkingRepository extends ChangeNotifier {
 
   void actualizarModoSinConexion(bool valor) {
     modoSinConexion = valor;
+    notifyListeners();
+  }
+
+  void actualizarAlertasVehiculoConductor(bool valor) {
+    alertasVehiculoConductor = valor;
     notifyListeners();
   }
 
