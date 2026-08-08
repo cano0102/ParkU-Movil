@@ -184,7 +184,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                           icon: Icons.map_outlined,
                           label: 'Ver mapa\ndel parqueo',
                           filled: false,
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ParkingMapPage())),
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ParkingMapPage(soloLectura: true))),
                         ),
                       ),
                     ],
