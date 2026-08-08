@@ -17,12 +17,17 @@ const _bordeOscuro = Color(0xFF2A3038);
 ///
 /// Con [vehicleParaAsignar] funciona como selector de celda dentro del
 /// flujo de ingreso (el guarda elige dónde estacionar el vehículo recién
-/// autorizado). Sin él, funciona como mapa de consulta general accesible
-/// desde el inicio: tocar una celda ocupada abre su detalle completo.
+/// autorizado). Sin él, funciona como mapa de consulta general.
+///
+/// [soloLectura] evita que tocar una celda ocupada abra el detalle con
+/// acciones de portería (reportar novedad, registrar salida): esas
+/// acciones son exclusivas del guarda. El conductor solo puede
+/// consultar la ocupación, nunca actuar sobre el vehículo de alguien más.
 class ParkingMapPage extends StatefulWidget {
   final Vehicle? vehicleParaAsignar;
+  final bool soloLectura;
 
-  const ParkingMapPage({super.key, this.vehicleParaAsignar});
+  const ParkingMapPage({super.key, this.vehicleParaAsignar, this.soloLectura = false});
 
   @override
   State<ParkingMapPage> createState() => _ParkingMapPageState();
@@ -62,7 +67,7 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
   }
 
   Future<void> _onCellTap(ParkingCell celda) async {
-    if (!_esAsignacion && celda.esOcupada) {
+    if (!_esAsignacion && !widget.soloLectura && celda.esOcupada) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => CellDetailPage(zona: _zona, celdaInicial: celda)));
       return;
     }
