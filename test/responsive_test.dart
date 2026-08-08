@@ -7,6 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:parku_movil/core/data/parking_repository.dart';
 import 'package:parku_movil/features/auth/presentation/pages/login.dart';
+import 'package:parku_movil/features/driver/presentation/pages/driver_history_page.dart';
+import 'package:parku_movil/features/driver/presentation/pages/driver_home_page.dart';
+import 'package:parku_movil/features/driver/presentation/pages/driver_pass_page.dart';
+import 'package:parku_movil/features/driver/presentation/pages/driver_profile_page.dart';
+import 'package:parku_movil/features/driver/presentation/pages/driver_vehicles_page.dart';
 import 'package:parku_movil/features/exit/presentation/pages/exit_register_page.dart';
 import 'package:parku_movil/features/history/presentation/pages/history_page.dart';
 import 'package:parku_movil/features/home/presentation/pages/home_dashboard_page.dart';
@@ -56,6 +61,11 @@ void main() {
         'Mapa del parqueadero': const ParkingMapPage(),
         'Elegir celda (asignación)': ParkingMapPage(vehicleParaAsignar: vehicle),
         'Detalle de celda ocupada': CellDetailPage(zona: zona, celdaInicial: celdaOcupada),
+        'Inicio del conductor': const DriverHomePage(),
+        'Mis vehículos': const DriverVehiclesPage(),
+        'Mi pase digital': const DriverPassPage(),
+        'Historial del conductor': const DriverHistoryPage(),
+        'Perfil del conductor': const DriverProfilePage(),
       };
 
       final fallos = <String>[];
