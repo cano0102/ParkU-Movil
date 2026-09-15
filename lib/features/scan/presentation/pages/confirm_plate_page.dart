@@ -3,6 +3,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
+import '../../../../core/network/api_exception.dart';
 import 'vehicle_authorized_page.dart';
 import 'vehicle_denied_page.dart';
 
@@ -18,13 +19,23 @@ class ConfirmPlatePage extends StatefulWidget {
 class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
   late String _placa;
   VehicleType _tipoSeleccionado = VehicleType.carro;
+  bool _verificando = false;
 
   @override
   void initState() {
     super.initState();
     _placa = widget.placaDetectada;
-    final registrado = ParkingRepository.instance.buscarVehiculo(_placa);
-    if (registrado != null) _tipoSeleccionado = registrado.tipo;
+    _precargarTipo();
+  }
+
+  Future<void> _precargarTipo() async {
+    try {
+      final registrado = await ParkingRepository.instance.buscarVehiculo(_placa);
+      if (mounted && registrado != null) setState(() => _tipoSeleccionado = registrado.tipo);
+    } catch (_) {
+      // Solo es una sugerencia inicial del selector de tipo: si falla, el
+      // guarda igual puede elegirlo a mano.
+    }
   }
 
   Future<void> _editarPlaca() async {
@@ -50,16 +61,25 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
     }
   }
 
-  void _verificar() {
-    final vehiculo = ParkingRepository.instance.buscarVehiculo(_placa);
-    if (vehiculo != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => VehicleAuthorizedPage(vehicle: vehiculo)),
-      );
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa)),
-      );
+  Future<void> _verificar() async {
+    if (_verificando) return;
+    setState(() => _verificando = true);
+    try {
+      final vehiculo = await ParkingRepository.instance.buscarVehiculo(_placa);
+      if (!mounted) return;
+      if (vehiculo != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => VehicleAuthorizedPage(vehicle: vehiculo)),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa)),
+        );
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _verificando = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -160,11 +180,7 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                   Row(
                     children: VehicleType.values.map((tipo) {
                       final seleccionado = tipo == _tipoSeleccionado;
-                      final icon = tipo == VehicleType.carro
-                          ? Icons.directions_car
-                          : tipo == VehicleType.moto
-                              ? Icons.two_wheeler
-                              : Icons.local_shipping;
+                      final icon = tipo == VehicleType.carro ? Icons.directions_car : Icons.two_wheeler;
                       return Expanded(
                         child: Padding(
                           padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 10 : 0),
@@ -223,17 +239,23 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                     flex: 3,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-                      onPressed: _verificar,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Flexible(
-                            child: Text('Verificar vehículo', overflow: TextOverflow.ellipsis, maxLines: 1),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward, size: 20),
-                        ],
-                      ),
+                      onPressed: _verificando ? null : _verificar,
+                      child: _verificando
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Flexible(
+                                  child: Text('Verificar vehículo', overflow: TextOverflow.ellipsis, maxLines: 1),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.arrow_forward, size: 20),
+                              ],
+                            ),
                     ),
                   ),
                 ],

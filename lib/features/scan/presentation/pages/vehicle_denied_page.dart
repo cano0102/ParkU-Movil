@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
 
 class VehicleDeniedPage extends StatelessWidget {
@@ -9,15 +10,21 @@ class VehicleDeniedPage extends StatelessWidget {
 
   const VehicleDeniedPage({super.key, required this.placa});
 
-  void _registrarVisitante(BuildContext context) {
-    ParkingRepository.instance.registrarVisitante(placa);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Vehículo registrado como visitante en Zona D')),
-    );
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeShell()),
-      (route) => false,
-    );
+  Future<void> _registrarVisitante(BuildContext context) async {
+    try {
+      await ParkingRepository.instance.registrarVisitante(placa);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vehículo registrado como visitante')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeShell()),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   void _reportarIncidente(BuildContext context) {
@@ -33,15 +40,21 @@ class VehicleDeniedPage extends StatelessWidget {
     );
   }
 
-  void _denegarIngreso(BuildContext context) {
-    ParkingRepository.instance.registrarDenegado(placa);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ingreso denegado y registrado en el historial')),
-    );
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeShell()),
-      (route) => false,
-    );
+  Future<void> _denegarIngreso(BuildContext context) async {
+    try {
+      await ParkingRepository.instance.registrarDenegado(placa);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingreso denegado y registrado en el historial')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeShell()),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -115,31 +128,6 @@ class VehicleDeniedPage extends StatelessWidget {
                         Text(
                           'La placa no coincide con ningún vehículo registrado en el Complejo Central. No hay reserva activa a esta hora.',
                           style: TextStyle(color: AppColors.dangerDark, fontSize: 14, height: 1.6),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('CUPOS PARA VISITANTES', style: AppTextStyles.overline),
-                        const SizedBox(height: 8),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text('7', style: AppTextStyles.heading1.copyWith(fontSize: 32)),
-                              const SizedBox(width: 6),
-                              Text('disponibles en Zona D', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
                         ),
                       ],
                     ),

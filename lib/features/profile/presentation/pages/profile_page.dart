@@ -4,6 +4,7 @@ import '../../../../app/router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/data/session_repository.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -118,6 +119,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (confirmar == true && mounted) {
+      await SessionRepository.instance.cerrarSesion();
+      _repo.reiniciarCache();
+      if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.login,
             (route) => false,

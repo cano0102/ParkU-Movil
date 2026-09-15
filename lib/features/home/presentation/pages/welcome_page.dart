@@ -2,14 +2,50 @@ import 'package:flutter/material.dart';
 import '../../../../app/router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../core/data/parking_repository.dart';
+import '../../../../core/data/session_repository.dart';
 import '../widgets/header.dart';
 import '../widgets/hero_section.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
   @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  bool _verificandoSesion = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _intentarSesionGuardada();
+  }
+
+  Future<void> _intentarSesionGuardada() async {
+    await SessionRepository.instance.restaurar();
+    if (!mounted) return;
+    if (SessionRepository.instance.autenticado) {
+      await ParkingRepository.instance.iniciar();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        SessionRepository.instance.esConductor ? AppRoutes.driverHome : AppRoutes.home,
+        (route) => false,
+      );
+      return;
+    }
+    setState(() => _verificandoSesion = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_verificandoSesion) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(

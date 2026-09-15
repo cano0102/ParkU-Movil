@@ -5,6 +5,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/access_record.dart' show ParkedVehicle;
+import '../../../../core/network/api_exception.dart';
 
 class ExitRegisterPage extends StatefulWidget {
   const ExitRegisterPage({super.key});
@@ -18,6 +19,8 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
   final _controller = TextEditingController();
   ParkedVehicle? _encontrado;
   bool _buscado = false;
+  bool _buscando = false;
+  int _busquedaId = 0;
   bool _placaCoincide = true;
   bool _sinNovedades = false;
 
@@ -27,10 +30,25 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
     super.dispose();
   }
 
-  void _buscar(String texto) {
+  Future<void> _buscar(String texto) async {
+    final id = ++_busquedaId;
+    final buscado = texto.trim().isNotEmpty;
     setState(() {
-      _buscado = texto.trim().isNotEmpty;
-      _encontrado = _buscado ? _repo.buscarDentro(texto) : null;
+      _buscado = buscado;
+      _buscando = buscado;
+      if (!buscado) _encontrado = null;
+    });
+    if (!buscado) return;
+    ParkedVehicle? resultado;
+    try {
+      resultado = await _repo.buscarDentro(texto);
+    } catch (_) {
+      resultado = null;
+    }
+    if (!mounted || id != _busquedaId) return;
+    setState(() {
+      _encontrado = resultado;
+      _buscando = false;
     });
   }
 
@@ -42,13 +60,19 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
     _buscar(_controller.text);
   }
 
-  void _confirmarSalida() {
+  Future<void> _confirmarSalida() async {
     if (_encontrado == null) return;
-    _repo.registrarSalida(_encontrado!.placa);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Salida registrada · ${ParkingRepository.formatea(ParkingRepository.normaliza(_encontrado!.placa))}')),
-    );
-    Navigator.of(context).pop();
+    try {
+      await _repo.registrarSalida(_encontrado!.placa);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Salida registrada · ${ParkingRepository.formatea(ParkingRepository.normaliza(_encontrado!.placa))}')),
+      );
+      Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   String _formatDuration(Duration d) {
@@ -97,7 +121,12 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_buscado && _encontrado == null)
+                  if (_buscando)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+                    ),
+                  if (!_buscando && _buscado && _encontrado == null)
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.dangerSoftBorder)),

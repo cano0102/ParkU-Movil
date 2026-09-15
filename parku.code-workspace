@@ -1,0 +1,59 @@
+{
+  // Abre este archivo con VS Code ("Archivo > Abrir área de trabajo desde archivo...")
+  // para tener la API y la app móvil en la misma ventana y poder correr las dos
+  // juntas con un solo clic. Asume que clonaste ambos repositorios uno junto al
+  // otro (hermanos); si tu carpeta de Api-ParkU está en otro lugar, ajusta la
+  // ruta "../Api-ParkU" de abajo.
+  "folders": [
+    {
+      "name": "parku-movil",
+      "path": "."
+    },
+    {
+      "name": "api-parku",
+      "path": "../Api-ParkU"
+    }
+  ],
+  "settings": {},
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "API: iniciar (npm run dev)",
+        "type": "node",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "cwd": "${workspaceFolder:api-parku}",
+        "console": "integratedTerminal",
+        "envFile": "${workspaceFolder:api-parku}/.env",
+        "restart": true,
+        "autoAttachChildProcess": true
+      },
+      {
+        "name": "ParkU Móvil (emulador Android o escritorio/Chrome)",
+        "request": "launch",
+        "type": "dart",
+        "program": "${workspaceFolder:parku-movil}/lib/main.dart",
+        "cwd": "${workspaceFolder:parku-movil}"
+      },
+      {
+        "name": "ParkU Móvil (dispositivo físico — API en tu computador)",
+        "request": "launch",
+        "type": "dart",
+        "program": "${workspaceFolder:parku-movil}/lib/main.dart",
+        "cwd": "${workspaceFolder:parku-movil}",
+        "toolArgs": [
+          "--dart-define=API_BASE_URL=http://TU_IP_LOCAL:3000/api"
+        ]
+      }
+    ],
+    "compounds": [
+      {
+        "name": "API + App (Android/escritorio)",
+        "configurations": ["API: iniciar (npm run dev)", "ParkU Móvil (emulador Android o escritorio/Chrome)"],
+        "stopAll": true
+      }
+    ]
+  }
+}

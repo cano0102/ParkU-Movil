@@ -43,8 +43,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
         return Icons.directions_car;
       case VehicleType.moto:
         return Icons.two_wheeler;
-      case VehicleType.camion:
-        return Icons.local_shipping;
     }
   }
 
