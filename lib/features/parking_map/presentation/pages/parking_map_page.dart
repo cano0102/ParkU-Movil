@@ -5,6 +5,7 @@ import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/parking_cell.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
 import '../widgets/cell_tile.dart';
 import 'cell_detail_page.dart';
@@ -79,15 +80,21 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
     final celda = _celdaSeleccionada;
     if (vehicle == null || celda == null || !celda.esLibre || _asignando) return;
     setState(() => _asignando = true);
-    final codigo = _repo.registrarIngreso(vehicle, celda: celda);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ingreso registrado · Celda $codigo')),
-    );
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeShell()),
-      (route) => false,
-    );
+    try {
+      final codigo = await _repo.registrarIngreso(vehicle, celda: celda);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ingreso registrado · Celda $codigo')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeShell()),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _asignando = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   IconData _iconoTipo(VehicleType tipo) {
@@ -96,8 +103,6 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
         return Icons.directions_car;
       case VehicleType.moto:
         return Icons.two_wheeler;
-      case VehicleType.camion:
-        return Icons.local_shipping;
     }
   }
 

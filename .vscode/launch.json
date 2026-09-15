@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ParkU Móvil (auto: emulador Android o escritorio/Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "ParkU Móvil (dispositivo físico — API en tu computador)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://TU_IP_LOCAL:3000/api"
+      ]
+    }
+  ]
+}

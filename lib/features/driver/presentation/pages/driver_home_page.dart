@@ -44,8 +44,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
         return Icons.directions_car;
       case VehicleType.moto:
         return Icons.two_wheeler;
-      case VehicleType.camion:
-        return Icons.local_shipping;
     }
   }
 

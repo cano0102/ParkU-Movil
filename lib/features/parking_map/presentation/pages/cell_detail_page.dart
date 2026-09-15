@@ -5,6 +5,7 @@ import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/parking_cell.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
+import '../../../../core/network/api_exception.dart';
 import '../widgets/cell_tile.dart';
 
 /// Detalle de una celda ocupada: quién la ocupa y acciones rápidas
@@ -29,14 +30,20 @@ class CellDetailPage extends StatelessWidget {
     );
   }
 
-  void _registrarSalida(BuildContext context) {
+  Future<void> _registrarSalida(BuildContext context) async {
     final placa = celdaInicial.placa;
     if (placa == null) return;
-    ParkingRepository.instance.registrarSalida(placa);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Salida registrada · $placa')),
-    );
-    Navigator.of(context).pop();
+    try {
+      await ParkingRepository.instance.registrarSalida(placa);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Salida registrada · $placa')),
+      );
+      Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   String _permanencia() {

@@ -3,6 +3,7 @@ import '../../../../app/router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/data/session_repository.dart';
 import 'driver_vehicles_page.dart';
 
 /// Perfil del conductor: sus datos, notificaciones de su vehículo y
@@ -56,6 +57,9 @@ class _DriverProfilePageState extends State<DriverProfilePage> {
       ),
     );
     if (confirmar == true && mounted) {
+      await SessionRepository.instance.cerrarSesion();
+      _repo.reiniciarCache();
+      if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }

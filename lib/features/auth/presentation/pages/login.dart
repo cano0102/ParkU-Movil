@@ -3,6 +3,8 @@ import '../../../../app/router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/data/session_repository.dart';
+import '../../../../core/network/api_exception.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,11 +15,10 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _correoController = TextEditingController(text: 'aarboleda@sena.edu.co');
+  final _correoController = TextEditingController();
   final _claveController = TextEditingController();
   bool _ocultarClave = true;
   bool _cargando = false;
-  bool _esConductor = false;
 
   @override
   void dispose() {
@@ -26,20 +27,24 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _elegirRol(bool esConductor) {
-    setState(() {
-      _esConductor = esConductor;
-      _correoController.text = esConductor ? ParkingRepository.instance.conductorCorreo : ParkingRepository.instance.guardaCorreo;
-    });
-  }
-
   Future<void> _ingresar() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _cargando = true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _cargando = false);
-    Navigator.of(context).pushNamedAndRemoveUntil(_esConductor ? AppRoutes.driverHome : AppRoutes.home, (route) => false);
+    try {
+      await SessionRepository.instance.iniciarSesion(
+        correo: _correoController.text.trim(),
+        contrasena: _claveController.text,
+      );
+      await ParkingRepository.instance.iniciar();
+      if (!mounted) return;
+      final esConductor = SessionRepository.instance.esConductor;
+      Navigator.of(context).pushNamedAndRemoveUntil(esConductor ? AppRoutes.driverHome : AppRoutes.home, (route) => false);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
   }
 
   void _recuperarClave() {
@@ -57,7 +62,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sede = ParkingRepository.instance.sede;
     return Scaffold(
       backgroundColor: AppColors.loginBackground,
       body: SafeArea(
@@ -75,21 +79,10 @@ class _LoginPageState extends State<LoginPage> {
                   Text('ParkU', style: AppTextStyles.heading1),
                   const SizedBox(height: 6),
                   Text(
-                    'Control de acceso vehicular\n$sede',
+                    'Control de acceso vehicular',
                     style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 30),
-
-                  Text('Ingresas como', style: AppTextStyles.label),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(child: _RolOpcion(icono: Icons.security, etiqueta: 'Vigilante', seleccionado: !_esConductor, onTap: () => _elegirRol(false))),
-                      const SizedBox(width: 10),
-                      Expanded(child: _RolOpcion(icono: Icons.directions_car, etiqueta: 'Conductor', seleccionado: _esConductor, onTap: () => _elegirRol(true))),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
 
                   Text('Correo institucional', style: AppTextStyles.label),
                   const SizedBox(height: 8),
@@ -174,46 +167,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RolOpcion extends StatelessWidget {
-  final IconData icono;
-  final String etiqueta;
-  final bool seleccionado;
-  final VoidCallback onTap;
-
-  const _RolOpcion({required this.icono, required this.etiqueta, required this.seleccionado, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: seleccionado ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: seleccionado ? null : Border.all(color: AppColors.border, width: 1.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icono, size: 20, color: seleccionado ? Colors.white : AppColors.textSecondary),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                etiqueta,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: seleccionado ? Colors.white : AppColors.textSecondary),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          ],
         ),
       ),
     );

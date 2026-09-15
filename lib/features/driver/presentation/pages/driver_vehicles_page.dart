@@ -3,6 +3,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
+import '../../../../core/network/api_exception.dart';
 
 /// "Mis vehículos": los vehículos registrados a nombre del conductor,
 /// con su estado actual, y la opción de registrar uno nuevo.
@@ -38,8 +39,6 @@ class _DriverVehiclesPageState extends State<DriverVehiclesPage> {
         return Icons.directions_car;
       case VehicleType.moto:
         return Icons.two_wheeler;
-      case VehicleType.camion:
-        return Icons.local_shipping;
     }
   }
 
@@ -205,6 +204,7 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
   VehicleType _tipo = VehicleType.carro;
   bool _soatVigente = true;
   String? _error;
+  bool _guardando = false;
 
   @override
   void dispose() {
@@ -214,20 +214,31 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
     super.dispose();
   }
 
-  void _guardar() {
+  Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
-    final ok = ParkingRepository.instance.registrarVehiculo(
-      placa: _placaController.text,
-      tipo: _tipo,
-      marcaLinea: _marcaController.text.trim(),
-      color: _colorController.text.trim(),
-      soatVigente: _soatVigente,
-    );
-    if (!ok) {
-      setState(() => _error = 'Esa placa ya está registrada en el sistema.');
-      return;
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    try {
+      await ParkingRepository.instance.registrarVehiculo(
+        placa: _placaController.text,
+        tipo: _tipo,
+        marcaLinea: _marcaController.text.trim(),
+        color: _colorController.text.trim(),
+        soatVigente: _soatVigente,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _guardando = false;
+        // El backend solo deja registrar vehículos desde portería/administración
+        // (403 para un Conductor): se muestra tal cual el motivo que da la API.
+        _error = e.message;
+      });
     }
-    Navigator.of(context).pop(true);
   }
 
   @override
@@ -253,11 +264,7 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                 Row(
                   children: VehicleType.values.map((tipo) {
                     final seleccionado = tipo == _tipo;
-                    final icon = tipo == VehicleType.carro
-                        ? Icons.directions_car
-                        : tipo == VehicleType.moto
-                            ? Icons.two_wheeler
-                            : Icons.local_shipping;
+                    final icon = tipo == VehicleType.carro ? Icons.directions_car : Icons.two_wheeler;
                     return Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 10 : 0),
@@ -347,7 +354,16 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(onPressed: _guardar, child: const Text('Guardar vehículo')),
+                  child: ElevatedButton(
+                    onPressed: _guardando ? null : _guardar,
+                    child: _guardando
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                          )
+                        : const Text('Guardar vehículo'),
+                  ),
                 ),
               ],
             ),
