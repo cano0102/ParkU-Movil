@@ -4,6 +4,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
+import '../../../incidents/presentation/pages/report_incident_page.dart';
 import '../../../parking_map/presentation/pages/parking_map_page.dart';
 
 class VehicleAuthorizedPage extends StatefulWidget {
@@ -23,14 +24,13 @@ class _VehicleAuthorizedPageState extends State<VehicleAuthorizedPage> {
   }
 
   void _reportarNovedad() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reportar novedad'),
-        content: const Text('Se notificará a coordinación de vigilancia sobre este vehículo antes de autorizar el ingreso.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReportIncidentPage(
+          tipoInicial: TipoNovedadUi.otro,
+          placaContexto: ParkingRepository.formatea(widget.vehicle.placa),
+          vehiculoId: widget.vehicle.id,
+        ),
       ),
     );
   }

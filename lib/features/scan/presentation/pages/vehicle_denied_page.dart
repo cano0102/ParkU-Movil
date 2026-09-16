@@ -5,6 +5,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
+import '../../../incidents/presentation/pages/report_incident_page.dart';
 
 class VehicleDeniedPage extends StatelessWidget {
   final String placa;
@@ -29,14 +30,12 @@ class VehicleDeniedPage extends StatelessWidget {
   }
 
   void _reportarIncidente(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reportar incidente'),
-        content: const Text('Se generará un reporte para el equipo de vigilancia con la placa y la hora del intento de ingreso.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReportIncidentPage(
+          tipoInicial: TipoNovedadUi.otro,
+          placaContexto: ParkingRepository.formatea(placa),
+        ),
       ),
     );
   }

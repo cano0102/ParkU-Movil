@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/widgets/app_bottom_nav.dart';
-import 'driver_home_page.dart' hide DriverReservePage;
+import 'driver_home_page.dart';
 import 'driver_history_page.dart';
 import 'driver_profile_page.dart';
 import 'driver_reservations_page.dart';

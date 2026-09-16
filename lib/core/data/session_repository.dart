@@ -94,6 +94,22 @@ class SessionRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// POST /api/auth/recuperar-password — solicita el envío del correo con el
+  /// enlace de recuperación. La API responde igual exista o no la cuenta,
+  /// para no revelar qué correos están registrados.
+  Future<void> solicitarRecuperacion({required String correo}) {
+    return ApiClient.instance.post('/auth/recuperar-password', body: {'correo': correo});
+  }
+
+  /// POST /api/auth/restablecer-password — consume el token recibido por
+  /// correo y fija la contraseña nueva.
+  Future<void> restablecerContrasena({required String token, required String nuevaContrasena}) {
+    return ApiClient.instance.post('/auth/restablecer-password', body: {
+      'token': token,
+      'nuevaContrasena': nuevaContrasena,
+    });
+  }
+
   Future<void> cerrarSesion() async {
     token = null;
     usuarioId = null;
