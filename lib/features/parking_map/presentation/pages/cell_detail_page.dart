@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/parking_cell.dart';
 import '../../../../core/models/parking_zone.dart';
@@ -66,174 +68,173 @@ class CellDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF14181D),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Opacity(
-                    opacity: 0.62,
-                    // OverflowBox: esta cuadrícula es solo un fondo decorativo
-                    // detrás del velo oscuro; en pantallas bajas puede pedir
-                    // más alto de lo que el Stack (con fit: expand) le da, así
-                    // que dejamos que se recorte en vez de forzar un layout
-                    // que rompa con overflow.
-                    child: OverflowBox(
-                      alignment: Alignment.topCenter,
-                      maxHeight: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
-                        child: _MiniGrid(celdas: zona.celdas),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: AppColors.darkBackground,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Opacity(
+                      opacity: 0.55,
+                      // OverflowBox: esta cuadrícula es solo un fondo decorativo
+                      // detrás del velo oscuro; en pantallas bajas puede pedir
+                      // más alto de lo que el Stack (con fit: expand) le da, así
+                      // que dejamos que se recorte en vez de forzar un layout
+                      // que rompa con overflow.
+                      child: OverflowBox(
+                        alignment: Alignment.topCenter,
+                        maxHeight: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
+                          child: _MiniGrid(celdas: zona.celdas),
+                        ),
                       ),
                     ),
-                  ),
-                  Container(color: const Color(0xA60A0D11)),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 10, 22, 0),
-                    child: Row(
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xB30A0D11), Color(0xE60A0D11)],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                      child: Row(
+                        children: [
+                          BackCircleButton(
+                            color: Colors.white,
+                            background: AppColors.darkSurface,
+                            borderColor: AppColors.darkBorder,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Celda ${celdaInicial.codigo}',
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  '${zona.tipo.zona} · ${zona.etiqueta}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkMuted),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              BottomActionBar(
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SheetHandle(),
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => Navigator.of(context).pop(),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                        IconBadge(
+                          icon: zona.tipo == VehicleType.moto ? Icons.two_wheeler_rounded : Icons.directions_car_rounded,
+                          size: 54,
+                          iconSize: 26,
+                          background: AppColors.dangerSoft,
+                          color: AppColors.dangerDarker,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: PlateBox(placa: celdaInicial.placa ?? '—', size: 18),
+                              ),
+                              const SizedBox(height: 6),
+                              Text('Ocupada · Celda ${celdaInicial.codigo}', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const StatusChip(label: 'Dentro', tone: ChipTone.danger),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(child: DataField(label: 'Conductor', value: celdaInicial.conductorNombre ?? '—', icon: Icons.person_outline_rounded)),
+                        const SizedBox(width: 12),
+                        Expanded(child: DataField(label: 'Rol', value: celdaInicial.conductorRol ?? '—', icon: Icons.badge_outlined)),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(child: DataField(label: 'Ingreso', value: _horaIngreso(), icon: Icons.login_rounded)),
+                        const SizedBox(width: 12),
+                        Expanded(child: DataField(label: 'Permanencia', value: _permanencia(), icon: Icons.schedule_rounded)),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(54), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                            onPressed: () => _reportarNovedad(context),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.report_gmailerrorred_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Novedad', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            '${zona.tipo.zona} · ${zona.etiqueta}',
-                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                          flex: 2,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(54), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                            onPressed: () => _registrarSalida(context),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.logout_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Registrar salida', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Container(
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28))),
-              padding: const EdgeInsets.fromLTRB(22, 16, 22, 30),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(999))),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(18)),
-                        child: Text(celdaInicial.codigo, style: AppTextStyles.mono(size: 15, color: AppColors.dangerDarker)),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(celdaInicial.placa ?? '—', style: AppTextStyles.plate(size: 22)),
-                            Text('Ocupada · ${zona.tipo.zona} · ${zona.etiqueta}', style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w700, fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(999)),
-                        child: Text('Dentro', style: AppTextStyles.caption.copyWith(color: AppColors.dangerDarker)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  const Divider(height: 1, color: AppColors.divider),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(child: _dato('Conductor', celdaInicial.conductorNombre ?? '—')),
-                      Expanded(child: _dato('Rol', celdaInicial.conductorRol ?? '—')),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(child: _dato('Ingreso', _horaIngreso())),
-                      Expanded(child: _dato('Permanencia', _permanencia())),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(54),
-                            side: const BorderSide(color: AppColors.border, width: 1.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: () => _reportarNovedad(context),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.report, size: 20, color: AppColors.textSecondary),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'Novedad',
-                                  style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary, fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () => _registrarSalida(context),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.logout, size: 20),
-                              SizedBox(width: 8),
-                              Flexible(
-                                child: Text('Registrar salida', overflow: TextOverflow.ellipsis, maxLines: 1),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _dato(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.small),
-        const SizedBox(height: 2),
-        Text(value, style: AppTextStyles.bodyBold.copyWith(fontSize: 14)),
-      ],
     );
   }
 }

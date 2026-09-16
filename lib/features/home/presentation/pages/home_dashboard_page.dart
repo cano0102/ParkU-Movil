@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
-import '../../../../core/models/access_record.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../exit/presentation/pages/exit_register_page.dart';
@@ -40,9 +40,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   IconData _iconForTipo(VehicleType tipo) {
     switch (tipo) {
       case VehicleType.carro:
-        return Icons.directions_car;
+        return Icons.directions_car_rounded;
       case VehicleType.moto:
-        return Icons.two_wheeler;
+        return Icons.two_wheeler_rounded;
     }
   }
 
@@ -51,230 +51,281 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     final disponibles = _repo.cuposDisponibles;
     final total = _repo.cuposTotales;
     final ocupadoPct = total == 0 ? 0.0 : (total - disponibles) / total;
-    final ultimos = _repo.historial.take(2).toList();
+    final ultimos = _repo.historial.take(3).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-              padding: const EdgeInsets.fromLTRB(22, 10, 22, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Buen turno,', style: TextStyle(color: Colors.white.withValues(alpha: 0.78), fontSize: 13, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 2),
-                            Text(_repo.guardaNombre, style: AppTextStyles.heading3.copyWith(color: Colors.white)),
-                          ],
-                        ),
+      body: Column(
+        children: [
+          GradientHeader(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4))],
                       ),
-                      _RoundIconButton(
-                        icon: Icons.notifications_outlined,
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No tienes notificaciones nuevas')),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.all(7),
-                        child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(999)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFB3E6A1), shape: BoxShape.circle)),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'Turno activo · Portería ${_repo.porteria} · ${_repo.turno}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                      padding: const EdgeInsets.all(7),
+                      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Buen turno,', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 1),
+                          Text(
+                            _repo.guardaNombre,
+                            style: AppTextStyles.heading3.copyWith(color: Colors.white),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('CUPOS DISPONIBLES', style: AppTextStyles.overline),
-                                  const SizedBox(height: 2),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
-                                      children: [
-                                        Text('$disponibles', style: AppTextStyles.heading1.copyWith(fontSize: 44)),
-                                        const SizedBox(width: 6),
-                                        Text('/ $total', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primarySoft,
-                                border: Border.all(color: AppColors.primarySoftBorder),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text('${(ocupadoPct * 100).round()}% ocupado', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(999),
-                          child: LinearProgressIndicator(
-                            value: ocupadoPct,
-                            minHeight: 10,
-                            backgroundColor: AppColors.divider,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        for (int i = 0; i < _repo.zonas.length; i++) ...[
-                          if (i > 0) ...[const SizedBox(height: 12), const Divider(height: 1, color: AppColors.divider), const SizedBox(height: 12)],
-                          _ZonaRow(zona: _repo.zonas[i], icon: _iconForTipo(_repo.zonas[i].tipo)),
                         ],
-                        const SizedBox(height: 14),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ParkingMapPage())),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            alignment: Alignment.center,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GlassIconButton(
+                      icon: Icons.notifications_none_rounded,
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No tienes notificaciones nuevas')),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const _PulseDot(),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Portería ${_repo.porteria} · ${_repo.turno}',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              children: [
+                AppCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.map_outlined, size: 16, color: AppColors.primaryDark),
-                                const SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'Ver mapa del parqueadero',
-                                    style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.w800),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                                Text('CUPOS DISPONIBLES', style: AppTextStyles.overline),
+                                const SizedBox(height: 4),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text('$disponibles', style: AppTextStyles.heading1.copyWith(fontSize: 46, height: 1)),
+                                      const SizedBox(width: 6),
+                                      Text('/ $total', style: AppTextStyles.body.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w700)),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          _OccupancyRing(value: ocupadoPct),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      for (int i = 0; i < _repo.zonas.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        _ZonaRow(zona: _repo.zonas[i], icon: _iconForTipo(_repo.zonas[i].tipo)),
                       ],
+                      if (_repo.zonas.isEmpty)
+                        Text(
+                          _repo.cargando ? 'Cargando ocupación…' : 'Sin información de celdas por ahora.',
+                          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ParkingMapPage())),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.map_outlined, size: 18, color: AppColors.primaryDark),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Ver mapa del parqueadero',
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.primaryDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ActionButton(
+                        icon: Icons.photo_camera_rounded,
+                        label: 'Escanear\nplaca',
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanPlatePage())),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.photo_camera,
-                          label: 'Escanear\nplaca',
-                          filled: true,
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanPlatePage())),
-                        ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ActionButton(
+                        icon: Icons.logout_rounded,
+                        label: 'Registrar\nsalida',
+                        filled: false,
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ExitRegisterPage())),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.logout,
-                          label: 'Registrar\nsalida',
-                          filled: false,
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ExitRegisterPage())),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text('ÚLTIMOS MOVIMIENTOS', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: widget.onVerTodo,
-                        child: Text('Ver todo', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                SectionHeader(title: 'ÚLTIMOS MOVIMIENTOS', actionLabel: 'Ver todo', onAction: widget.onVerTodo),
+                const SizedBox(height: 10),
+                if (ultimos.isEmpty)
+                  const EmptyState(icon: Icons.inbox_outlined, title: 'Sin movimientos todavía', subtitle: 'Aquí verás los últimos ingresos y salidas registrados en portería.')
+                else
                   for (final r in ultimos) ...[
-                    _MovementTile(record: r),
+                    MovementTile(record: r),
                     const SizedBox(height: 10),
                   ],
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _RoundIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _RoundIconButton({required this.icon, required this.onTap});
+/// Punto verde con un halo que "respira", para indicar turno activo.
+class _PulseDot extends StatefulWidget {
+  const _PulseDot();
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(14)),
-        child: Icon(icon, color: Colors.white, size: 22),
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final t = Curves.easeOut.transform(_controller.value);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 6 + 8 * t,
+                height: 6 + 8 * t,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primaryAccent.withValues(alpha: (1 - t) * 0.6)),
+              ),
+              Container(width: 7, height: 7, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primaryAccent)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Anillo de ocupación con el porcentaje en el centro.
+class _OccupancyRing extends StatelessWidget {
+  final double value;
+  const _OccupancyRing({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = (value * 100).round();
+    final color = value >= 0.85 ? AppColors.warning : AppColors.primary;
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (context, v, _) => CircularProgressIndicator(
+              value: v,
+              strokeWidth: 7,
+              strokeCap: StrokeCap.round,
+              backgroundColor: AppColors.divider,
+              color: color,
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('$pct%', style: AppTextStyles.bodyBold.copyWith(fontSize: 15, height: 1)),
+                const SizedBox(height: 2),
+                Text('ocupado', style: AppTextStyles.small.copyWith(fontSize: 9, letterSpacing: 0.3)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -287,93 +338,41 @@ class _ZonaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAlmostFull = zona.disponibles <= (zona.capacidad * 0.15).ceil();
+    final isAlmostFull = zona.capacidad > 0 && zona.disponibles <= (zona.capacidad * 0.15).ceil();
+    final pct = zona.capacidad == 0 ? 0.0 : zona.ocupados / zona.capacidad;
+    final color = isAlmostFull ? AppColors.warning : AppColors.primary;
     return Row(
       children: [
-        Icon(icon, size: 20, color: isAlmostFull ? AppColors.warning : AppColors.primary),
+        IconBadge(
+          icon: icon,
+          size: 38,
+          iconSize: 20,
+          color: isAlmostFull ? AppColors.warningDark : AppColors.primaryDark,
+          background: isAlmostFull ? AppColors.warningSoft : AppColors.primarySoft,
+        ),
         const SizedBox(width: 12),
-        Expanded(child: Text('${zona.tipo.zona} · ${zona.etiqueta}', style: AppTextStyles.bodyBold)),
-        Text('${zona.ocupados}/${zona.capacidad}', style: AppTextStyles.mono(size: 14)),
-      ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool filled;
-  final VoidCallback onTap;
-
-  const _ActionButton({required this.icon, required this.label, required this.filled, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        height: 64,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        decoration: BoxDecoration(
-          color: filled ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: filled ? null : Border.all(color: AppColors.border, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 26, color: filled ? Colors.white : AppColors.textSecondary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, height: 1.15, color: filled ? Colors.white : AppColors.textPrimary),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('${zona.tipo.zona} · ${zona.etiqueta}', style: AppTextStyles.bodyBold.copyWith(fontSize: 14), overflow: TextOverflow.ellipsis, maxLines: 1),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('${zona.ocupados}/${zona.capacidad}', style: AppTextStyles.mono(size: 13)),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(value: pct, minHeight: 6, backgroundColor: AppColors.divider, color: color),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _MovementTile extends StatelessWidget {
-  final AccessRecord record;
-  const _MovementTile({required this.record});
-
-  @override
-  Widget build(BuildContext context) {
-    final esIngreso = record.estado == AccessStatus.dentro;
-    final iconBg = esIngreso ? AppColors.primarySoft : AppColors.neutralSoft;
-    final iconColor = esIngreso ? AppColors.primaryDark : AppColors.textSecondary;
-    final icon = esIngreso ? Icons.login : Icons.logout;
-    final hora = TimeOfDay.fromDateTime(record.hora).format(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, size: 20, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(record.placa, style: AppTextStyles.mono(size: 15, color: AppColors.textPrimary)),
-                const SizedBox(height: 2),
-                Text(record.detalle, style: AppTextStyles.small.copyWith(color: AppColors.textMuted)),
-              ],
-            ),
-          ),
-          Text(hora, style: AppTextStyles.mono(size: 12, color: AppColors.textPlaceholder)),
-        ],
-      ),
+      ],
     );
   }
 }

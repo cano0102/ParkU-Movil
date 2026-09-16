@@ -20,7 +20,7 @@ class ParkUApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
 
       // Ruta inicial y generador de rutas con nombre de la app.
-      initialRoute: AppRoutes.welcome,
+      initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

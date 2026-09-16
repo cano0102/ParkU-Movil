@@ -3,6 +3,7 @@ import '../features/auth/presentation/pages/login.dart';
 import '../features/driver/presentation/pages/driver_home_shell.dart';
 import '../features/home/presentation/pages/home_shell.dart';
 import '../features/home/presentation/pages/welcome_page.dart';
+import '../features/splash/presentation/pages/splash_page.dart';
 
 /// Nombres de las rutas de nivel superior de la app. Las pantallas del
 /// flujo de escaneo (confirmar, autorizado, denegado, salida) se navegan
@@ -10,7 +11,8 @@ import '../features/home/presentation/pages/welcome_page.dart';
 class AppRoutes {
   AppRoutes._();
 
-  static const String welcome = '/';
+  static const String splash = '/';
+  static const String welcome = '/welcome';
   static const String login = '/login';
   static const String home = '/home';
   static const String driverHome = '/driver-home';
@@ -19,22 +21,37 @@ class AppRoutes {
 class AppRouter {
   AppRouter._();
 
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    switch (settings.name) {
+  static Widget _pageFor(String? name) {
+    switch (name) {
+      case AppRoutes.splash:
+        return const SplashPage();
       case AppRoutes.welcome:
-        return MaterialPageRoute(builder: (_) => const WelcomePage());
+        return const WelcomePage();
       case AppRoutes.login:
-        return MaterialPageRoute(builder: (_) => const LoginPage());
+        return const LoginPage();
       case AppRoutes.home:
-        return MaterialPageRoute(builder: (_) => const HomeShell());
+        return const HomeShell();
       case AppRoutes.driverHome:
-        return MaterialPageRoute(builder: (_) => const DriverHomeShell());
+        return const DriverHomeShell();
       default:
-        return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(child: Text('Ruta no encontrada: ${settings.name}')),
-          ),
-        );
+        return Scaffold(body: Center(child: Text('Ruta no encontrada: $name')));
     }
+  }
+
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    return MaterialPageRoute(settings: settings, builder: (_) => _pageFor(settings.name));
+  }
+
+  /// Ruta con fundido, para salir de la introducción sin el deslizamiento
+  /// de las transiciones normales.
+  static Route<dynamic> fadeRoute(String name) {
+    return PageRouteBuilder(
+      settings: RouteSettings(name: name),
+      transitionDuration: const Duration(milliseconds: 450),
+      pageBuilder: (_, _, _) => _pageFor(name),
+      transitionsBuilder: (_, animation, _, child) {
+        return FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: child);
+      },
+    );
   }
 }

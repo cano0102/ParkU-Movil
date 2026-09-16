@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
@@ -44,12 +45,7 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Corregir placa'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          maxLength: 8,
-        ),
+        content: TextField(controller: controller, autofocus: true, textCapitalization: TextCapitalization.characters, maxLength: 8, style: AppTextStyles.plate(size: 18)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Guardar')),
@@ -68,13 +64,9 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
       final vehiculo = await ParkingRepository.instance.buscarVehiculo(_placa);
       if (!mounted) return;
       if (vehiculo != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => VehicleAuthorizedPage(vehicle: vehiculo)),
-        );
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VehicleAuthorizedPage(vehicle: vehiculo)));
       } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa)),
-        );
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa)));
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -86,182 +78,132 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
   @override
   Widget build(BuildContext context) {
     final placaFormateada = ParkingRepository.formatea(_placa);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 22, 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  Expanded(
-                    child: Text('Confirmar placa', style: AppTextStyles.title, overflow: TextOverflow.ellipsis, maxLines: 1),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: SizedBox(
+    return DarkStatusBarIcons(
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const PageTopBar(title: 'Confirmar placa', subtitle: 'Paso 2 de 3 · Verificación', showBack: true, large: false),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                  children: [
+                    Container(
                       height: 150,
-                      width: double.infinity,
-                      child: Container(
-                        color: const Color(0xFFDDE4E7),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'CAPTURA DE LA PLACA\n[ foto tomada ]',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.mono(size: 11, color: const Color(0xFF7A8790)),
-                        ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF1F2933), Color(0xFF0F1419)]),
+                        boxShadow: AppColors.cardShadow,
+                      ),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.photo_camera_back_outlined, color: Colors.white.withValues(alpha: 0.35), size: 30),
+                          const SizedBox(height: 8),
+                          Text('CAPTURA DE LA PLACA', style: AppTextStyles.mono(size: 10, color: Colors.white.withValues(alpha: 0.45))),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text('PLACA DETECTADA', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                              decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
-                              child: Text('98% confianza', style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        InkWell(
-                          onTap: _editarPlaca,
-                          borderRadius: BorderRadius.circular(18),
-                          child: Container(
-                            height: 76,
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            decoration: BoxDecoration(border: Border.all(color: AppColors.primary, width: 2), borderRadius: BorderRadius.circular(18)),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(placaFormateada, style: AppTextStyles.plate(size: 32)),
-                                  const SizedBox(width: 14),
-                                  const Icon(Icons.edit, color: AppColors.primary, size: 22),
-                                ],
+                    const SizedBox(height: 16),
+                    AppCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text('PLACA DETECTADA', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              const StatusChip(label: '98% confianza', tone: ChipTone.success),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Toca la placa para corregir cualquier carácter antes de continuar.',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text('TIPO DE VEHÍCULO', style: AppTextStyles.overline),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: VehicleType.values.map((tipo) {
-                      final seleccionado = tipo == _tipoSeleccionado;
-                      final icon = tipo == VehicleType.carro ? Icons.directions_car : Icons.two_wheeler;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 10 : 0),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: () => setState(() => _tipoSeleccionado = tipo),
-                            child: Container(
-                              height: 74,
-                              decoration: BoxDecoration(
-                                color: seleccionado ? AppColors.primary : Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                                border: seleccionado ? null : Border.all(color: AppColors.border, width: 1.5),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(icon, size: 24, color: seleccionado ? Colors.white : AppColors.textSecondary),
-                                  const SizedBox(height: 4),
-                                  Text(tipo.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: seleccionado ? Colors.white : AppColors.textSecondary)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 30),
-              decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.border))),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        side: const BorderSide(color: AppColors.border, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
-                        'Repetir',
-                        style: AppTextStyles.bodyBold.copyWith(color: AppColors.textSecondary),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-                      onPressed: _verificando ? null : _verificar,
-                      child: _verificando
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Flexible(
-                                  child: Text('Verificar vehículo', overflow: TextOverflow.ellipsis, maxLines: 1),
+                          const SizedBox(height: 16),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _editarPlaca,
+                              borderRadius: BorderRadius.circular(18),
+                              child: Container(
+                                height: 82,
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primarySoft.withValues(alpha: 0.5),
+                                  border: Border.all(color: AppColors.primary, width: 2),
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.arrow_forward, size: 20),
-                              ],
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      PlateBox(placa: placaFormateada, size: 26),
+                                      const SizedBox(width: 14),
+                                      const IconBadge(icon: Icons.edit_rounded, size: 36, iconSize: 18, background: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(Icons.touch_app_outlined, size: 16, color: AppColors.textPlaceholder),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text('Toca la placa para corregir cualquier carácter antes de continuar.', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    const SectionHeader(title: 'TIPO DE VEHÍCULO'),
+                    const SizedBox(height: 10),
+                    VehicleTypeSelector(selected: _tipoSeleccionado, onChanged: (tipo) => setState(() => _tipoSeleccionado = tipo), height: 74),
+                  ],
+                ),
               ),
-            ),
-          ],
+              BottomActionBar(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Repetir', overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                        onPressed: _verificando ? null : _verificar,
+                        child: _verificando
+                            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(child: Text('Verificar vehículo', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward_rounded, size: 20),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
@@ -36,155 +37,124 @@ class _DriverVehiclesPageState extends State<DriverVehiclesPage> {
   IconData _iconoTipo(VehicleType tipo) {
     switch (tipo) {
       case VehicleType.carro:
-        return Icons.directions_car;
+        return Icons.directions_car_rounded;
       case VehicleType.moto:
-        return Icons.two_wheeler;
+        return Icons.two_wheeler_rounded;
     }
   }
 
   Future<void> _registrarVehiculo() async {
-    final resultado = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _RegistrarVehiculoSheet(),
-    );
+    final resultado = await showModalBottomSheet<bool>(context: context, isScrollControlled: true, builder: (_) => const _RegistrarVehiculoSheet());
     if (resultado == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vehículo registrado correctamente')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vehículo registrado correctamente')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final vehiculos = _repo.misVehiculos();
+    final puedeVolver = Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text('Mis vehículos', style: AppTextStyles.heading2, overflow: TextOverflow.ellipsis, maxLines: 1),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: _registrarVehiculo,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(14)),
-                      child: const Icon(Icons.add, size: 22, color: Colors.white),
-                    ),
-                  ),
-                ],
+    return DarkStatusBarIcons(
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              PageTopBar(
+                title: 'Mis vehículos',
+                subtitle: vehiculos.isEmpty ? 'Ninguno registrado' : '${vehiculos.length} registrado${vehiculos.length == 1 ? '' : 's'}',
+                showBack: puedeVolver,
+                trailing: TopBarActionButton(icon: Icons.add_rounded, filled: true, onTap: _registrarVehiculo),
               ),
-            ),
-            Expanded(
-              child: vehiculos.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(28),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.directions_car_outlined, size: 40, color: AppColors.textPlaceholder),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Aún no tienes vehículos registrados.',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 18),
-                            ElevatedButton(onPressed: _registrarVehiculo, child: const Text('Registrar vehículo')),
-                          ],
+              Expanded(
+                child: vehiculos.isEmpty
+                    ? EmptyState(
+                        icon: Icons.directions_car_outlined,
+                        title: 'Aún no tienes vehículos registrados',
+                        subtitle: 'Registra tu carro o moto para agilizar tu ingreso en portería.',
+                        action: ElevatedButton(
+                          style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
+                          onPressed: _registrarVehiculo,
+                          child: const Text('Registrar vehículo'),
                         ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                        itemCount: vehiculos.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final v = vehiculos[index];
+                          final celda = _repo.celdaDePlaca(v.placa);
+                          final dentro = celda != null;
+                          return AppCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    IconBadge(icon: _iconoTipo(v.tipo), size: 46, iconSize: 23),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(v.tipo.label.toUpperCase(), style: AppTextStyles.overline.copyWith(fontSize: 10)),
+                                          const SizedBox(height: 4),
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerLeft,
+                                            child: PlateBox(placa: ParkingRepository.formatea(v.placa), size: 17),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    StatusChip(label: dentro ? 'Dentro' : 'Fuera', tone: dentro ? ChipTone.success : ChipTone.neutral),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                const Divider(),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: DataField(label: 'Marca y línea', value: v.marcaLinea),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: DataField(label: 'Color', value: v.color),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: DataField(
+                                        label: 'SOAT',
+                                        value: v.soatVigente ? 'Vigente' : 'Vencido',
+                                        valueColor: v.soatVigente ? AppColors.success : AppColors.danger,
+                                        icon: v.soatVigente ? Icons.verified_rounded : Icons.error_outline_rounded,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: DataField(label: 'Celda', value: celda?.codigo ?? '—', mono: true),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
-                      itemCount: vehiculos.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final v = vehiculos[index];
-                        final celda = _repo.celdaDePlaca(v.placa);
-                        return Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(14)),
-                                    child: Icon(_iconoTipo(v.tipo), color: AppColors.primaryDark, size: 22),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(ParkingRepository.formatea(v.placa), style: AppTextStyles.plate(size: 22)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: celda != null ? AppColors.primarySoft : AppColors.neutralSoft,
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      celda != null ? 'Dentro' : 'Fuera',
-                                      style: AppTextStyles.caption.copyWith(color: celda != null ? AppColors.primaryDark : AppColors.textSecondary),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  Expanded(child: _dato('Marca y línea', v.marcaLinea)),
-                                  Expanded(child: _dato('Color', v.color)),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  Expanded(child: _dato('SOAT', v.soatVigente ? 'Vigente' : 'Vencido', color: v.soatVigente ? AppColors.success : AppColors.danger)),
-                                  Expanded(child: _dato('Celda', celda?.codigo ?? '—')),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _dato(String label, String value, {Color? color}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.small),
-        const SizedBox(height: 2),
-        Text(value, style: AppTextStyles.bodyBold.copyWith(fontSize: 14, color: color ?? AppColors.textPrimary)),
-      ],
     );
   }
 }
@@ -243,11 +213,11 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28))),
-        padding: const EdgeInsets.fromLTRB(22, 16, 22, 30),
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -255,43 +225,15 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(999)), alignment: Alignment.center),
+                const SheetHandle(),
                 const SizedBox(height: 18),
                 Text('Registrar vehículo', style: AppTextStyles.heading3),
+                const SizedBox(height: 4),
+                Text('Los datos deben coincidir con la tarjeta de propiedad.', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500)),
                 const SizedBox(height: 18),
                 Text('Tipo de vehículo', style: AppTextStyles.label),
                 const SizedBox(height: 8),
-                Row(
-                  children: VehicleType.values.map((tipo) {
-                    final seleccionado = tipo == _tipo;
-                    final icon = tipo == VehicleType.carro ? Icons.directions_car : Icons.two_wheeler;
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 10 : 0),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() => _tipo = tipo),
-                          child: Container(
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: seleccionado ? AppColors.primary : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: seleccionado ? null : Border.all(color: AppColors.border, width: 1.5),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(icon, size: 22, color: seleccionado ? Colors.white : AppColors.textSecondary),
-                                const SizedBox(height: 4),
-                                Text(tipo.label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: seleccionado ? Colors.white : AppColors.textSecondary)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                VehicleTypeSelector(selected: _tipo, onChanged: (tipo) => setState(() => _tipo = tipo)),
                 const SizedBox(height: 16),
                 Text('Placa', style: AppTextStyles.label),
                 const SizedBox(height: 8),
@@ -299,7 +241,10 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                   controller: _placaController,
                   textCapitalization: TextCapitalization.characters,
                   style: AppTextStyles.plate(size: 16),
-                  decoration: const InputDecoration(hintText: 'Ej. WGY482'),
+                  decoration: const InputDecoration(
+                    hintText: 'Ej. WGY482',
+                    prefixIcon: Icon(Icons.pin_outlined, color: AppColors.textPlaceholder),
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return 'Ingresa la placa';
                     if (ParkingRepository.normaliza(value).length < 5) return 'Placa inválida';
@@ -308,6 +253,7 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Column(
@@ -340,29 +286,35 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _soatVigente,
-                  onChanged: (value) => setState(() => _soatVigente = value),
-                  title: Text('SOAT vigente', style: AppTextStyles.bodyBold.copyWith(fontSize: 14)),
+                const SizedBox(height: 12),
+                AppCard(
+                  radius: 16,
+                  elevated: false,
+                  padding: EdgeInsets.zero,
+                  child: SettingsTile(icon: Icons.verified_outlined, title: 'SOAT vigente', value: _soatVigente, onChanged: (value) => setState(() => _soatVigente = value)),
                 ),
                 if (_error != null) ...[
-                  const SizedBox(height: 4),
-                  Text(_error!, style: AppTextStyles.caption.copyWith(color: AppColors.danger)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.dangerDarker),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(_error!, style: AppTextStyles.caption.copyWith(color: AppColors.dangerDarker)),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _guardando ? null : _guardar,
-                    child: _guardando
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                          )
-                        : const Text('Guardar vehículo'),
+                    child: _guardando ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : const Text('Guardar vehículo'),
                   ),
                 ),
               ],

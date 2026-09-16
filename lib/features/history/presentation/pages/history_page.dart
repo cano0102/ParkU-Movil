@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
-import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/access_record.dart';
 
@@ -31,276 +31,70 @@ class _HistoryPageState extends State<HistoryPage> {
     if (mounted) setState(() {});
   }
 
-  Color _pillBg(AccessStatus estado) {
-    switch (estado) {
-      case AccessStatus.dentro:
-        return AppColors.primarySoft;
-      case AccessStatus.salio:
-        return AppColors.neutralSoft;
-      case AccessStatus.novedad:
-        return AppColors.dangerSoft;
-    }
-  }
-
-  Color _pillFg(AccessStatus estado) {
-    switch (estado) {
-      case AccessStatus.dentro:
-        return AppColors.primaryDark;
-      case AccessStatus.salio:
-        return AppColors.textSecondary;
-      case AccessStatus.novedad:
-        return AppColors.dangerDarker;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final registros = _repo.historialFiltrado(_filtro);
-    final ingresos = registros
-        .where((r) => r.estado == AccessStatus.dentro)
-        .length;
-    final salidas = registros
-        .where((r) => r.estado == AccessStatus.salio)
-        .length;
-    final novedades = registros
-        .where((r) => r.estado == AccessStatus.novedad)
-        .length;
+    final ingresos = registros.where((r) => r.estado == AccessStatus.dentro).length;
+    final salidas = registros.where((r) => r.estado == AccessStatus.salio).length;
+    final novedades = registros.where((r) => r.estado == AccessStatus.novedad).length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Historial',
-                          style: AppTextStyles.heading2,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.tune,
-                          size: 20,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['Hoy', 'Ayer', '7 días'].map((f) {
-                        final seleccionado = f == _filtro;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(999),
-                            onTap: () => setState(() => _filtro = f),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: seleccionado
-                                    ? AppColors.primary
-                                    : Colors.white,
-                                border: seleccionado
-                                    ? null
-                                    : Border.all(color: AppColors.border),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                f,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: seleccionado
-                                      ? Colors.white
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _statCard(
-                          'Ingresos',
-                          '$ingresos',
-                          AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _statCard(
-                          'Salidas',
-                          '$salidas',
-                          AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _statCard(
-                          'Novedades',
-                          '$novedades',
-                          AppColors.danger,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+    return DarkStatusBarIcons(
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              PageTopBar(
+                title: 'Historial',
+                subtitle: 'Movimientos de portería',
+                trailing: TopBarActionButton(
+                  icon: Icons.tune_rounded,
+                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usa los filtros de periodo para acotar el historial'))),
+                ),
               ),
-            ),
-            Expanded(
-              child: registros.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Sin movimientos en este periodo',
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.textMuted,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FilterChipsRow(options: const ['Hoy', 'Ayer', '7 días'], selected: _filtro, onSelected: (f) => setState(() => _filtro = f)),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatTile(label: 'Ingresos', value: '$ingresos', icon: Icons.login_rounded),
                         ),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
-                      itemCount: registros.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final r = registros[index];
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 13,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: AppColors.neutralSoft,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.directions_car,
-                                  size: 19,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      r.placa,
-                                      style: AppTextStyles.mono(
-                                        size: 15,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      r.detalle,
-                                      style: AppTextStyles.small.copyWith(
-                                        color: AppColors.textMuted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    TimeOfDay.fromDateTime(
-                                      r.hora,
-                                    ).format(context),
-                                    style: AppTextStyles.mono(
-                                      size: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 9,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _pillBg(r.estado),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      r.estadoLabel,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        color: _pillFg(r.estado),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: StatTile(label: 'Salidas', value: '$salidas', icon: Icons.logout_rounded, accent: AppColors.textSecondary),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: StatTile(label: 'Novedades', value: '$novedades', icon: Icons.report_gmailerrorred_rounded, accent: AppColors.danger),
+                        ),
+                      ],
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppTextStyles.small),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: AppTextStyles.heading3.copyWith(fontSize: 22, color: color),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: registros.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.history_toggle_off_rounded,
+                        title: 'Sin movimientos en este periodo',
+                        subtitle: 'Prueba con otro rango de fechas o registra un ingreso desde el escáner.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        itemCount: registros.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) => MovementTile(record: registros[index], showStatus: true),
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

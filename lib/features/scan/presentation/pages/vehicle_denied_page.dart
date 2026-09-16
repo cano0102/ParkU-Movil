@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
@@ -62,125 +63,96 @@ class VehicleDeniedPage extends StatelessWidget {
     final placaFormateada = ParkingRepository.formatea(placa);
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(22, 6, 22, 24),
-              color: AppColors.danger,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+      body: Column(
+        children: [
+          ResultHeader(
+            icon: Icons.gpp_maybe_rounded,
+            title: 'Vehículo no autorizado',
+            subtitle: 'Sin registro en el sistema',
+            placa: placaFormateada,
+            chipLabel: 'Sin ficha',
+            gradient: AppColors.dangerGradient,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              children: [
+                AppCard(
+                  color: AppColors.dangerSoft,
+                  borderColor: AppColors.dangerSoftBorder,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.gpp_maybe, color: Colors.white, size: 40),
+                      const IconBadge(icon: Icons.info_outline_rounded, size: 40, iconSize: 21, background: Colors.white, color: AppColors.dangerDarker),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Vehículo no autorizado', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                            SizedBox(height: 2),
-                            Text('Sin registro en el sistema', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                            Text('MOTIVO', style: AppTextStyles.overline.copyWith(color: AppColors.dangerDarker)),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'La placa no coincide con ningún vehículo registrado en el sistema. No hay reserva activa a esta hora.',
+                              style: TextStyle(color: AppColors.dangerDark, fontSize: 13.5, fontWeight: FontWeight.w500, height: 1.5),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(18)),
-                    child: Row(
+                ),
+                const SizedBox(height: 20),
+                const SectionHeader(title: '¿QUÉ DESEAS HACER?'),
+                const SizedBox(height: 10),
+                _OptionTile(
+                  icon: Icons.person_add_alt_1_rounded,
+                  iconColor: AppColors.primaryDark,
+                  iconBackground: AppColors.primarySoft,
+                  label: 'Registrar como visitante',
+                  subtitle: 'Permite el ingreso puntual y deja constancia',
+                  onTap: () => _registrarVisitante(context),
+                ),
+                const SizedBox(height: 10),
+                _OptionTile(
+                  icon: Icons.report_rounded,
+                  iconColor: AppColors.warningDark,
+                  iconBackground: AppColors.warningSoft,
+                  label: 'Reportar incidente',
+                  subtitle: 'Notifica al equipo de vigilancia',
+                  onTap: () => _reportarIncidente(context),
+                ),
+              ],
+            ),
+          ),
+          BottomActionBar(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+                    onPressed: () => _denegarIngreso(context),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(placaFormateada, style: AppTextStyles.plate(size: 30, color: Colors.white)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(999)),
-                          child: const Text('Sin ficha', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
-                        ),
+                        Icon(Icons.block_rounded, size: 22),
+                        SizedBox(width: 10),
+                        Flexible(child: Text('Denegar ingreso', overflow: TextOverflow.ellipsis, maxLines: 1)),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Volver a escanear'),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.dangerSoftBorder)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('MOTIVO', style: AppTextStyles.overline.copyWith(color: AppColors.dangerDarker)),
-                        const SizedBox(height: 10),
-                        Text(
-                          'La placa no coincide con ningún vehículo registrado en el Complejo Central. No hay reserva activa a esta hora.',
-                          style: TextStyle(color: AppColors.dangerDark, fontSize: 14, height: 1.6),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _OptionTile(
-                    icon: Icons.person_add,
-                    iconColor: AppColors.primary,
-                    label: 'Registrar como visitante',
-                    onTap: () => _registrarVisitante(context),
-                  ),
-                  const SizedBox(height: 10),
-                  _OptionTile(
-                    icon: Icons.report,
-                    iconColor: AppColors.warning,
-                    label: 'Reportar incidente',
-                    onTap: () => _reportarIncidente(context),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 30),
-              decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.border))),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-                      onPressed: () => _denegarIngreso(context),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.block, size: 22),
-                          SizedBox(width: 10),
-                          Flexible(
-                            child: Text('Denegar ingreso', overflow: TextOverflow.ellipsis, maxLines: 1),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Volver a escanear', style: AppTextStyles.bodyBold.copyWith(color: AppColors.textMuted, fontSize: 13)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -189,28 +161,42 @@ class VehicleDeniedPage extends StatelessWidget {
 class _OptionTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
+  final Color iconBackground;
   final String label;
+  final String subtitle;
   final VoidCallback onTap;
 
-  const _OptionTile({required this.icon, required this.iconColor, required this.label, required this.onTap});
+  const _OptionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
+    return AppCard(
+      radius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       onTap: onTap,
-      child: Container(
-        height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border, width: 1.5), borderRadius: BorderRadius.circular(18)),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(width: 12),
-            Expanded(child: Text(label, style: AppTextStyles.bodyBold.copyWith(fontSize: 15))),
-            const Icon(Icons.chevron_right, color: AppColors.textPlaceholder),
-          ],
-        ),
+      child: Row(
+        children: [
+          IconBadge(icon: icon, size: 44, iconSize: 22, color: iconColor, background: iconBackground),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.bodyBold.copyWith(fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: AppTextStyles.small.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textPlaceholder),
+        ],
       ),
     );
   }

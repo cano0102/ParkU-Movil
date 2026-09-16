@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
+import '../network/api_exception.dart';
+
+/// Resultado de [SessionRepository.restaurar].
+enum EstadoSesion { restaurada, sinSesion, sinConexion }
 
 /// Roles reales de Api-ParkU (src/config/roles.js). No están en el orden que
 /// uno esperaría: Vigilante es 2, no 1.
@@ -39,12 +43,19 @@ class SessionRepository extends ChangeNotifier {
   bool get esConductor => rol == Roles.conductor;
   bool get esVigilanteOAdmin => rol == Roles.vigilante || rol == Roles.admin;
 
-  /// Intenta recuperar una sesión guardada al abrir la app. Si el token ya
-  /// no es válido, la limpia y deja la app en el estado de "sin sesión".
-  Future<void> restaurar() async {
+  /// Intenta recuperar una sesión guardada al abrir la app.
+  ///
+  /// - [EstadoSesion.restaurada]: el token sigue vigente y los datos del
+  ///   usuario quedaron cargados.
+  /// - [EstadoSesion.sinSesion]: no había token, o la API lo rechazó; en ese
+  ///   caso se limpia para que la app arranque "sin sesión".
+  /// - [EstadoSesion.sinConexion]: había token pero no se pudo hablar con la
+  ///   API. El token se conserva en disco para reintentar en el próximo
+  ///   arranque, pero esta vez la app entra sin sesión.
+  Future<EstadoSesion> restaurar() async {
     final prefs = await SharedPreferences.getInstance();
     final tokenGuardado = prefs.getString(_kToken);
-    if (tokenGuardado == null) return;
+    if (tokenGuardado == null) return EstadoSesion.sinSesion;
 
     token = tokenGuardado;
     ApiClient.instance.setToken(tokenGuardado);
@@ -52,8 +63,18 @@ class SessionRepository extends ChangeNotifier {
       final data = await ApiClient.instance.get('/auth/verificar');
       _aplicarUsuario(data['usuario'] as Map<String, dynamic>);
       if (esConductor) await _resolverConductorId();
+      return EstadoSesion.restaurada;
+    } on ApiException catch (e) {
+      if (e.statusCode == null) {
+        token = null;
+        ApiClient.instance.setToken(null);
+        return EstadoSesion.sinConexion;
+      }
+      await cerrarSesion();
+      return EstadoSesion.sinSesion;
     } catch (_) {
       await cerrarSesion();
+      return EstadoSesion.sinSesion;
     }
   }
 

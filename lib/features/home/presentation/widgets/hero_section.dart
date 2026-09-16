@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 
 class _Feature {
   final IconData icon;
@@ -12,17 +13,17 @@ class _Feature {
 
 const _features = [
   _Feature(
-    icon: Icons.photo_camera,
+    icon: Icons.photo_camera_rounded,
     title: 'Lectura automática de placas',
     description: 'Escanea la placa con la cámara y verifica el vehículo al instante.',
   ),
   _Feature(
-    icon: Icons.local_parking,
+    icon: Icons.local_parking_rounded,
     title: 'Ocupación en tiempo real',
     description: 'Consulta los cupos disponibles por zona en cada turno.',
   ),
   _Feature(
-    icon: Icons.history,
+    icon: Icons.history_rounded,
     title: 'Historial y trazabilidad',
     description: 'Revisa ingresos, salidas y novedades de la portería.',
   ),
@@ -36,20 +37,17 @@ class HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Control de acceso vehicular',
-            style: AppTextStyles.heading2,
-          ),
+          Text('Control de acceso vehicular', style: AppTextStyles.heading2),
           const SizedBox(height: 6),
           Text(
             'Todo el flujo de portería y vigilancia, desde el celular del guarda.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w500),
+            style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w500, height: 1.4),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
           for (final feature in _features) ...[
             _FeatureTile(feature: feature),
             if (feature != _features.last) const SizedBox(height: 12),
@@ -66,23 +64,13 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AppCard(
+      radius: 20,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(14)),
-            child: Icon(feature.icon, color: AppColors.primaryDark, size: 22),
-          ),
+          IconBadge(icon: feature.icon, size: 46, iconSize: 23),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

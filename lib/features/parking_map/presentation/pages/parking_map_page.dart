@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
+import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/parking_cell.dart';
 import '../../../../core/models/parking_zone.dart';
@@ -9,10 +11,6 @@ import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
 import '../widgets/cell_tile.dart';
 import 'cell_detail_page.dart';
-
-const _fondoOscuro = Color(0xFF14181D);
-const _tarjetaOscura = Color(0xFF1C2127);
-const _bordeOscuro = Color(0xFF2A3038);
 
 /// Mapa interactivo del parqueadero.
 ///
@@ -100,9 +98,9 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
   IconData _iconoTipo(VehicleType tipo) {
     switch (tipo) {
       case VehicleType.carro:
-        return Icons.directions_car;
+        return Icons.directions_car_rounded;
       case VehicleType.moto:
-        return Icons.two_wheeler;
+        return Icons.two_wheeler_rounded;
     }
   }
 
@@ -114,166 +112,166 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
       filas.add(zona.celdas.skip(i).take(5).toList());
     }
 
-    return Scaffold(
-      backgroundColor: _fondoOscuro,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 4, 22, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_esAsignacion ? 'Elegir celda' : 'Mapa del parqueadero', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white)),
-                            if (_esAsignacion)
-                              Text.rich(
-                                TextSpan(
-                                  text: 'Asignando a ',
-                                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                                  children: [
-                                    TextSpan(
-                                      text: ParkingRepository.formatea(widget.vehicleParaAsignar!.placa),
-                                      style: AppTextStyles.mono(size: 12, color: const Color(0xFFB3E6A1)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: VehicleType.values.map((tipo) {
-                      final seleccionada = tipo == _zonaSeleccionada;
-                      final z = _repo.zonaDe(tipo);
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 8 : 0),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => _cambiarZona(tipo),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: seleccionada ? AppColors.primary : _tarjetaOscura,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(_iconoTipo(tipo), size: 20, color: seleccionada ? Colors.white : const Color(0xFF94A3B8)),
-                                  const SizedBox(height: 3),
-                                  Text(tipo.zona, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: seleccionada ? Colors.white : const Color(0xFF94A3B8))),
-                                  Text(z.etiqueta, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: (seleccionada ? Colors.white : const Color(0xFF94A3B8)).withValues(alpha: 0.8))),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(color: _tarjetaOscura, borderRadius: BorderRadius.circular(22), border: Border.all(color: _bordeOscuro)),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: AppColors.darkBackground,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${zona.tipo.zona} · ${zona.etiqueta}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: Color(0xFF94A3B8)),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                    Row(
+                      children: [
+                        BackCircleButton(
+                          color: Colors.white,
+                          background: AppColors.darkSurface,
+                          borderColor: AppColors.darkBorder,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _esAsignacion ? 'Elegir celda' : 'Mapa del parqueadero',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (_esAsignacion)
+                                Text.rich(
+                                  TextSpan(
+                                    text: 'Asignando a ',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkMuted),
+                                    children: [
+                                      TextSpan(
+                                        text: ParkingRepository.formatea(widget.vehicleParaAsignar!.placa),
+                                        style: AppTextStyles.mono(size: 12, color: AppColors.primaryAccent),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Text(
+                                  '${_repo.cuposDisponibles} de ${_repo.cuposTotales} cupos libres',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkMuted),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: VehicleType.values.map((tipo) {
+                        final seleccionada = tipo == _zonaSeleccionada;
+                        final z = _repo.zonaDe(tipo);
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(right: tipo != VehicleType.values.last ? 10 : 0),
+                            child: _ZoneTab(
+                              icon: _iconoTipo(tipo),
+                              titulo: tipo.zona,
+                              subtitulo: '${z.etiqueta} · ${z.disponibles} libres',
+                              seleccionada: seleccionada,
+                              onTap: () => _cambiarZona(tipo),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text('${zona.disponibles} libres', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFB3E6A1))),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 6,
-                        children: const [
-                          _Leyenda(color: Color(0xFF39A900), fondo: Color(0x4D39A900), texto: 'LIBRE'),
-                          _Leyenda(color: Color(0xFFEF4444), fondo: Color(0x4DEF4444), texto: 'OCUPADA'),
-                          _Leyenda(color: Color(0xFFF59E0B), fondo: Color(0xFF332A10), texto: 'RESERVA'),
-                          _Leyenda(color: Color(0xFF94A3B8), fondo: Color(0xFF23262B), texto: 'MANT.'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-                        itemCount: filas.length,
-                        itemBuilder: (context, index) {
-                          final esCarril = index > 0 && index % 4 == 0;
-                          final fila = Padding(
-                            padding: const EdgeInsets.only(bottom: 7),
-                            child: Row(
-                              children: _celdasFila(filas[index], _celdaSeleccionada, _onCellTap),
-                            ),
-                          );
-                          if (!esCarril) return fila;
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                child: Row(
-                                  children: [
-                                    Expanded(child: Container(height: 2, color: const Color(0xFF4B5563))),
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 8),
-                                      child: Icon(Icons.sync_alt, size: 14, color: Color(0xFF4B5563)),
-                                    ),
-                                    Expanded(child: Container(height: 2, color: const Color(0xFF4B5563))),
-                                  ],
-                                ),
-                              ),
-                              fila,
-                            ],
-                          );
-                        },
-                      ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
               ),
-            ),
-            _BottomSheet(
-              celda: _celdaSeleccionada,
-              zonaNombre: '${zona.tipo.zona} · ${zona.etiqueta}',
-              esAsignacion: _esAsignacion,
-              asignando: _asignando,
-              onAsignar: _confirmarAsignacion,
-            ),
-          ],
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkSurface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.darkBorder),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${zona.tipo.zona} · ${zona.etiqueta}'.toUpperCase(),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1, color: AppColors.darkMuted),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(color: const Color(0x2639A900), borderRadius: BorderRadius.circular(999)),
+                              child: Text('${zona.disponibles} libres', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primaryAccent)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 6,
+                          children: const [
+                            _Leyenda(color: Color(0xFF39A900), fondo: Color(0x4D39A900), texto: 'LIBRE'),
+                            _Leyenda(color: Color(0xFFEF4444), fondo: Color(0x4DEF4444), texto: 'OCUPADA'),
+                            _Leyenda(color: Color(0xFFF59E0B), fondo: Color(0xFF332A10), texto: 'RESERVA'),
+                            _Leyenda(color: Color(0xFF94A3B8), fondo: Color(0xFF23262B), texto: 'MANT.'),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: filas.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Text(
+                                    _repo.cargando ? 'Cargando celdas…' : 'No hay celdas configuradas en esta zona.',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: AppColors.darkMuted, fontSize: 13, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+                                itemCount: filas.length,
+                                itemBuilder: (context, index) {
+                                  final esCarril = index > 0 && index % 4 == 0;
+                                  final fila = Padding(
+                                    padding: const EdgeInsets.only(bottom: 7),
+                                    child: Row(children: _celdasFila(filas[index], _celdaSeleccionada, _onCellTap)),
+                                  );
+                                  if (!esCarril) return fila;
+                                  return Column(children: [const _Carril(), fila]);
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _BottomSheet(
+                celda: _celdaSeleccionada,
+                zonaNombre: '${zona.tipo.zona} · ${zona.etiqueta}',
+                esAsignacion: _esAsignacion,
+                asignando: _asignando,
+                onAsignar: _confirmarAsignacion,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -295,6 +293,80 @@ List<Widget> _celdasFila(List<ParkingCell> celdas, ParkingCell? seleccionada, Va
   return widgets;
 }
 
+/// Pestaña de zona (carros / motos) en la parte superior del mapa.
+class _ZoneTab extends StatelessWidget {
+  final IconData icon;
+  final String titulo;
+  final String subtitulo;
+  final bool seleccionada;
+  final VoidCallback onTap;
+
+  const _ZoneTab({required this.icon, required this.titulo, required this.subtitulo, required this.seleccionada, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = seleccionada ? Colors.white : AppColors.darkMuted;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        gradient: seleccionada ? AppColors.primaryGradient : null,
+        color: seleccionada ? null : AppColors.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: seleccionada ? Colors.transparent : AppColors.darkBorder),
+        boxShadow: seleccionada ? AppColors.primaryShadow : null,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            child: Row(
+              children: [
+                Icon(icon, size: 22, color: fg),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(titulo, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: fg), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(subtitulo, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg.withValues(alpha: 0.8)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Separador de carril entre bloques de filas.
+class _Carril extends StatelessWidget {
+  const _Carril();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(child: Container(height: 2, decoration: BoxDecoration(color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2)))),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.sync_alt_rounded, size: 14, color: Color(0xFF4B5563)),
+          ),
+          Expanded(child: Container(height: 2, decoration: BoxDecoration(color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2)))),
+        ],
+      ),
+    );
+  }
+}
+
 class _Leyenda extends StatelessWidget {
   final Color color;
   final Color fondo;
@@ -306,9 +378,9 @@ class _Leyenda extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 9, height: 9, decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(3), border: Border.all(color: color, width: 1.5))),
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(3), border: Border.all(color: color, width: 1.5))),
         const SizedBox(width: 5),
-        Text(texto, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8))),
+        Text(texto, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.darkMuted, letterSpacing: 0.4)),
       ],
     );
   }
@@ -331,95 +403,168 @@ class _BottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28))),
-      padding: const EdgeInsets.fromLTRB(22, 16, 22, 30),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(999))),
-          const SizedBox(height: 14),
-          if (celda == null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                'Toca una celda del mapa para ver el detalle.',
-                style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+    return BottomActionBar(
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        alignment: Alignment.topCenter,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SheetHandle(),
+            const SizedBox(height: 14),
+            if (celda == null)
+              Row(
+                children: [
+                  const IconBadge(icon: Icons.touch_app_outlined, size: 40, iconSize: 20, background: AppColors.neutralSoft, color: AppColors.textSecondary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      esAsignacion ? 'Toca una celda libre para asignarla.' : 'Toca una celda del mapa para ver el detalle.',
+                      style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              Row(
+                children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: _fondoCodigo(celda!.estado), borderRadius: BorderRadius.circular(18)),
+                    child: Text(celda!.codigo, style: AppTextStyles.mono(size: 15, color: _colorCodigo(celda!.estado))),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Celda ${celda!.codigo}', style: AppTextStyles.heading3.copyWith(fontSize: 17)),
+                        const SizedBox(height: 2),
+                        Text(zonaNombre, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  StatusChip(label: _estadoLabel(celda!.estado), tone: _tono(celda!.estado)),
+                ],
               ),
-            )
-          else ...[
-            Row(
-              children: [
+              const SizedBox(height: 14),
+              if (celda!.esOcupada)
                 Container(
-                  width: 56,
-                  height: 56,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(18)),
-                  child: Text(celda!.codigo, style: AppTextStyles.mono(size: 15, color: AppColors.primaryDark)),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Celda ${celda!.codigo}', style: AppTextStyles.heading3.copyWith(fontSize: 17)),
-                      Text('${_estadoLabel(celda!.estado)} · $zonaNombre', style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w700, fontSize: 13)),
+                      Text('OCUPADA POR', style: AppTextStyles.overline.copyWith(color: AppColors.dangerDarker, fontSize: 10)),
+                      const SizedBox(height: 4),
+                      Text.rich(
+                        TextSpan(
+                          style: const TextStyle(color: AppColors.dangerDark, fontSize: 13.5, fontWeight: FontWeight.w600),
+                          children: [
+                            TextSpan(text: celda!.placa ?? 'Vehículo sin placa', style: AppTextStyles.mono(size: 13.5, color: AppColors.dangerDark)),
+                            if (celda!.conductorNombre != null) TextSpan(text: ' · ${celda!.conductorNombre}'),
+                            if (celda!.desde != null) TextSpan(text: ' · desde ${_horaCorta(celda!.desde)}'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (celda!.esBloqueada)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(16)),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.warningDark),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Esta celda no está disponible para asignar.', style: TextStyle(color: AppColors.warningDark, fontSize: 13, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                )
+              else if (esAsignacion)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: asignando ? null : onAsignar,
+                    child: asignando
+                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle_rounded, size: 22),
+                              SizedBox(width: 10),
+                              Flexible(child: Text('Asignar y registrar ingreso', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            ],
+                          ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(16)),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, size: 18, color: AppColors.primaryDark),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Celda libre y disponible.', style: TextStyle(color: AppColors.primaryDeep, fontSize: 13, fontWeight: FontWeight.w700)),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            if (celda!.esOcupada)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: AppColors.dangerSoft, borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('OCUPADA POR', style: AppTextStyles.overline.copyWith(color: AppColors.dangerDarker, fontSize: 11)),
-                    const SizedBox(height: 4),
-                    Text.rich(
-                      TextSpan(
-                        style: TextStyle(color: AppColors.dangerDark, fontSize: 14, fontWeight: FontWeight.w700),
-                        children: [
-                          TextSpan(text: celda!.placa ?? '', style: AppTextStyles.mono(size: 14, color: AppColors.dangerDark)),
-                          TextSpan(text: ' · ${celda!.conductorNombre ?? ''} · desde ${_horaCorta(celda!.desde)}'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (celda!.esBloqueada)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(16)),
-                child: Text('Esta celda no está disponible para asignar.', style: TextStyle(color: const Color(0xFF92400E), fontSize: 13, fontWeight: FontWeight.w700)),
-              )
-            else if (esAsignacion)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: asignando ? null : onAsignar,
-                  child: asignando
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle, size: 22),
-                            SizedBox(width: 10),
-                            Text('Asignar y registrar ingreso'),
-                          ],
-                        ),
-                ),
-              )
-            else
-              Text('Celda libre.', style: AppTextStyles.body.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+            ],
           ],
-        ],
+        ),
       ),
     );
+  }
+
+  Color _fondoCodigo(CellStatus estado) {
+    switch (estado) {
+      case CellStatus.libre:
+        return AppColors.primarySoft;
+      case CellStatus.ocupada:
+        return AppColors.dangerSoft;
+      case CellStatus.reserva:
+        return AppColors.warningSoft;
+      case CellStatus.mantenimiento:
+        return AppColors.neutralSoft;
+    }
+  }
+
+  Color _colorCodigo(CellStatus estado) {
+    switch (estado) {
+      case CellStatus.libre:
+        return AppColors.primaryDark;
+      case CellStatus.ocupada:
+        return AppColors.dangerDarker;
+      case CellStatus.reserva:
+        return AppColors.warningDark;
+      case CellStatus.mantenimiento:
+        return AppColors.textSecondary;
+    }
+  }
+
+  ChipTone _tono(CellStatus estado) {
+    switch (estado) {
+      case CellStatus.libre:
+        return ChipTone.success;
+      case CellStatus.ocupada:
+        return ChipTone.danger;
+      case CellStatus.reserva:
+        return ChipTone.warning;
+      case CellStatus.mantenimiento:
+        return ChipTone.neutral;
+    }
   }
 
   String _estadoLabel(CellStatus estado) {

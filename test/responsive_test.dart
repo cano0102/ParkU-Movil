@@ -4,8 +4,11 @@
 // Android (360dp).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:parku_movil/core/data/parking_repository.dart';
+import 'package:parku_movil/core/models/parking_cell.dart';
+import 'package:parku_movil/core/models/parking_zone.dart';
+import 'package:parku_movil/core/models/vehicle.dart';
 import 'package:parku_movil/features/auth/presentation/pages/login.dart';
 import 'package:parku_movil/features/driver/presentation/pages/driver_history_page.dart';
 import 'package:parku_movil/features/driver/presentation/pages/driver_home_page.dart';
@@ -23,6 +26,7 @@ import 'package:parku_movil/features/scan/presentation/pages/confirm_plate_page.
 import 'package:parku_movil/features/scan/presentation/pages/scan_plate_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/vehicle_authorized_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/vehicle_denied_page.dart';
+import 'package:parku_movil/features/splash/presentation/pages/splash_page.dart';
 
 const _tamanosDeTelefono = {
   'pequeño (iPhone SE, 320x568)': Size(320, 568),
@@ -34,6 +38,7 @@ const _tamanosDeTelefono = {
 void main() {
   for (final entry in _tamanosDeTelefono.entries) {
     testWidgets('pantallas sin overflow en tamano ${entry.key}', (tester) async {
+      SharedPreferences.setMockInitialValues({});
       await tester.binding.setSurfaceSize(entry.value);
       tester.view.physicalSize = entry.value;
       tester.view.devicePixelRatio = 1.0;
@@ -42,12 +47,40 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      final repo = ParkingRepository.instance;
-      final vehicle = repo.buscarVehiculo('WGY482')!;
-      final zona = repo.zonas.first;
-      final celdaOcupada = zona.celdas.firstWhere((c) => c.esOcupada);
+      // Datos de muestra construidos localmente: el repositorio ahora
+      // consulta Api-ParkU y en las pruebas no hay red.
+      const vehicle = Vehicle(
+        placa: 'WGY482',
+        tipo: VehicleType.carro,
+        marcaLinea: 'Mazda 3',
+        color: 'Gris',
+        soatVigente: true,
+        conductorNombre: 'Laura Gómez',
+        conductorRol: 'Aprendiz',
+        conductorDocumento: 'CC 1.020.334.556',
+      );
+      final celdaOcupada = ParkingCell(
+        codigo: 'A-07',
+        estado: CellStatus.ocupada,
+        placa: 'WGY 482',
+        conductorNombre: 'Laura Gómez',
+        conductorRol: 'Aprendiz',
+        desde: DateTime.now().subtract(const Duration(hours: 2, minutes: 15)),
+      );
+      final zona = ParkingZone(
+        etiqueta: 'Carros',
+        tipo: VehicleType.carro,
+        celdas: [
+          for (var i = 1; i <= 6; i++) ParkingCell(codigo: 'A-0$i'),
+          celdaOcupada,
+          ParkingCell(codigo: 'A-08', estado: CellStatus.reserva),
+          ParkingCell(codigo: 'A-09', estado: CellStatus.mantenimiento),
+          ParkingCell(codigo: 'A-10'),
+        ],
+      );
 
       final pantallas = <String, Widget>{
+        'Introducción': const SplashPage(),
         'Bienvenida': const WelcomePage(),
         'Login': const LoginPage(),
         'Inicio': const HomeDashboardPage(),
