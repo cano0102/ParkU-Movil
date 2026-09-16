@@ -423,6 +423,31 @@ class ParkingRepository extends ChangeNotifier {
   }
 
   // ============================================================
+  // Novedades / incidentes / quejas
+  // ============================================================
+
+  /// POST /novedades — cualquier usuario autenticado (conductor, vigilante o
+  /// administrador) puede reportar una novedad. Se usa tanto desde portería
+  /// (celda, vehículo escaneado) como desde el conductor (queja o incidente
+  /// sobre su propio vehículo), por eso las referencias son opcionales.
+  Future<void> reportarNovedad({
+    required String tipoNovedad,
+    required String descripcion,
+    String prioridad = 'MEDIA',
+    int? vehiculoId,
+    int? celdaId,
+  }) async {
+    await ApiClient.instance.post('/novedades', body: {
+      'tipo_novedad': tipoNovedad,
+      'prioridad': prioridad,
+      'descripcion': descripcion,
+      if (vehiculoId != null) 'vehiculo_id': vehiculoId,
+      if (celdaId != null) 'celda_id': celdaId,
+      if (_parqueaderoId != null) 'parqueadero_id': _parqueaderoId,
+    });
+  }
+
+  // ============================================================
   // Historial (portería)
   // ============================================================
 

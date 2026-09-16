@@ -7,6 +7,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_exception.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -51,16 +52,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _recuperarClave() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Recuperar contraseña'),
-        content: const Text('Contacta a soporte SENA para restablecer tu contraseña institucional.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido')),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ForgotPasswordPage()));
   }
 
   @override

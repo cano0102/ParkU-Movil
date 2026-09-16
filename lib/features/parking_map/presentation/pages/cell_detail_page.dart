@@ -8,6 +8,7 @@ import '../../../../core/models/parking_cell.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../incidents/presentation/pages/report_incident_page.dart';
 import '../widgets/cell_tile.dart';
 
 /// Detalle de una celda ocupada: quién la ocupa y acciones rápidas
@@ -20,14 +21,14 @@ class CellDetailPage extends StatelessWidget {
   const CellDetailPage({super.key, required this.zona, required this.celdaInicial});
 
   void _reportarNovedad(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reportar novedad'),
-        content: Text('Se registrará una novedad sobre la celda ${celdaInicial.codigo}.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReportIncidentPage(
+          tipoInicial: TipoNovedadUi.otro,
+          celdaContexto: celdaInicial.codigo,
+          celdaId: celdaInicial.id,
+          placaContexto: celdaInicial.placa,
+        ),
       ),
     );
   }
