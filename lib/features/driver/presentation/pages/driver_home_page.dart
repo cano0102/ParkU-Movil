@@ -5,7 +5,6 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../incidents/presentation/pages/report_incident_page.dart';
 import '../../../parking_map/presentation/pages/parking_map_page.dart';
-import 'driver_pass_page.dart';
 import 'driver_reservations_page.dart';
 
 /// Inicio del conductor: enfocado en reserva de celdas y estado del parqueadero.
@@ -191,30 +190,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ActionButton(
-                        icon: Icons.qr_code_2_rounded,
-                        label: 'Mi pase digital',
-                        filled: false,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const DriverPassPage()),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ActionButton(
-                        icon: Icons.report_gmailerrorred_rounded,
-                        label: 'Reportar queja',
-                        filled: false,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ReportIncidentPage(tipoInicial: TipoNovedadUi.queja)),
-                        ),
-                      ),
-                    ),
-                  ],
+                ActionButton(
+                  icon: Icons.report_gmailerrorred_rounded,
+                  label: 'Reportar queja',
+                  subtitle: 'Cuéntanos si algo no estuvo bien',
+                  filled: false,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ReportIncidentPage(tipoInicial: TipoNovedadUi.queja)),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 AppCard(
