@@ -54,7 +54,7 @@ class _DriverVehiclesPageState extends State<DriverVehiclesPage> {
   @override
   Widget build(BuildContext context) {
     final vehiculos = _repo.misVehiculos();
-    final puedeVolver = Navigator.of(context).canPop();
+    final puedeVolver = (ModalRoute.of(context)?.canPop ?? false);
 
     return DarkStatusBarIcons(
       child: Scaffold(

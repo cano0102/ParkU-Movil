@@ -90,7 +90,7 @@ class _DriverReservationsPageState extends State<DriverReservationsPage> {
   Widget build(BuildContext context) {
     final reservas = _repo.reservas;
     final activas = reservas.where((r) => r.estado.esActiva).length;
-    final puedeVolver = Navigator.of(context).canPop();
+    final puedeVolver = (ModalRoute.of(context)?.canPop ?? false);
 
     return DarkStatusBarIcons(
       child: Scaffold(

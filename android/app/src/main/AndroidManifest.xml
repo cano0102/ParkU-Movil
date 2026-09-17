@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="parku_movil"
+        android:label="ParkU"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -39,6 +39,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Abrir enlaces https en el navegador (registro en la web de ParkU). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 

@@ -351,7 +351,10 @@ class _DriverReserveFormPageState extends State<DriverReserveFormPage> {
                     value: _celda,
                     items: [
                       for (final c in _celdas)
-                        DropdownMenuItem(value: c, child: Text(c.usabilidad.esPreferencial ? '${c.codigo} · ${c.usabilidad.label}' : c.codigo)),
+                        DropdownMenuItem(
+                          value: c,
+                          child: Text(c.usabilidad.esPreferencial ? '${c.codigo} · ${c.usabilidad.label}' : c.codigo),
+                        ),
                     ],
                     onChanged: _celdas.isEmpty ? null : (c) => setState(() => _celda = c),
                     trailing: _cargandoCeldas

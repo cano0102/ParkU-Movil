@@ -142,6 +142,8 @@ class ParkingRepository extends ChangeNotifier {
     } else if (_session.esVigilanteOAdmin) {
       await _cargarHistorialSemana();
     }
+    // Un ingreso/salida nuevo viene con su aviso: la campana se pone al día.
+    await _cargarNotificaciones();
     notifyListeners();
   }
 
@@ -574,7 +576,15 @@ class ParkingRepository extends ChangeNotifier {
 
     await ApiClient.instance.post(
       '/entradas-salidas/entrada',
-      body: {'vehiculo_id': vehicle.id, 'parqueadero_id': parqueaderoId, if (destino?.id != null) 'celda_id': destino!.id},
+      body: {
+        'vehiculo_id': vehicle.id,
+        // Con el conductor el registro queda a nombre de alguien (la API valida
+        // que sea propietario): así el historial de portería muestra quién
+        // entró y el aviso al conductor no tiene que deducirlo del vehículo.
+        'conductor_id': ?vehicle.conductorPrincipalId,
+        'parqueadero_id': parqueaderoId,
+        'celda_id': ?destino?.id,
+      },
     );
 
     final placaFormateada = formatea(vehicle.placa);
@@ -718,6 +728,7 @@ class ParkingRepository extends ChangeNotifier {
 
   Future<void> recargarMisReservas() async {
     await _cargarMisReservas();
+    await _cargarNotificaciones();
     notifyListeners();
   }
 
@@ -753,7 +764,10 @@ class ParkingRepository extends ChangeNotifier {
         'fecha_hora_fin': fin.toUtc().toIso8601String(),
       },
     );
+    // La API deja una notificación al crear la reserva: se recoge de una vez
+    // para que la campana suba sin esperar a abrirla.
     await _cargarMisReservas();
+    await _cargarNotificaciones();
     notifyListeners();
     return Reserva.fromJson(data as Map<String, dynamic>);
   }
@@ -766,6 +780,7 @@ class ParkingRepository extends ChangeNotifier {
       body: {if (motivo != null && motivo.trim().isNotEmpty) 'motivo': motivo.trim()},
     );
     await _cargarMisReservas();
+    await _cargarNotificaciones();
     notifyListeners();
   }
 

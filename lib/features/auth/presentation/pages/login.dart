@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
-    final puedeVolver = Navigator.of(context).canPop();
+    final puedeVolver = (ModalRoute.of(context)?.canPop ?? false);
     const alturaCabecera = 250.0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
