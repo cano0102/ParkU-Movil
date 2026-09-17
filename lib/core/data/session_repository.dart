@@ -94,6 +94,35 @@ class SessionRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// POST /api/auth/registro — crea la cuenta (rol Conductor) y, si va el
+  /// documento, su perfil de conductor vinculado. La API ya no pide verificar
+  /// el correo: al terminar se puede iniciar sesión directamente. La cuenta
+  /// no queda abierta aquí; el login lo hace la persona a continuación.
+  ///
+  /// La contraseña debe tener mínimo 8 caracteres con mayúscula, minúscula y
+  /// número (la API lo valida y devuelve el mensaje).
+  Future<void> registrar({
+    required String nombre,
+    required String correo,
+    required String contrasena,
+    String? documento,
+    String tipoDocumento = 'CC',
+    String? telefono,
+  }) {
+    final numeroDocumento = documento?.trim();
+    return ApiClient.instance.post('/auth/registro', body: {
+      'nombre': nombre.trim(),
+      'correo': correo.trim(),
+      'contrasena': contrasena,
+      'confirmar_contrasena': contrasena,
+      if (numeroDocumento != null && numeroDocumento.isNotEmpty) ...{
+        'tipo_documento': tipoDocumento,
+        'numero_documento': numeroDocumento,
+      },
+      if (telefono != null && telefono.trim().isNotEmpty) 'numero': telefono.trim(),
+    });
+  }
+
   /// POST /api/auth/recuperar-password — solicita el envío del correo con el
   /// enlace de recuperación. La API responde igual exista o no la cuenta,
   /// para no revelar qué correos están registrados.

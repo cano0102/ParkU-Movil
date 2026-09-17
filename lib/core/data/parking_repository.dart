@@ -4,6 +4,7 @@ import '../network/api_client.dart';
 import '../network/api_exception.dart';
 import '../models/access_record.dart';
 import '../models/asignacion_vigilante.dart';
+import '../models/notificacion.dart';
 import '../models/parking_cell.dart';
 import '../models/parking_zone.dart';
 import '../models/parqueadero.dart';
@@ -38,6 +39,11 @@ class ParkingRepository extends ChangeNotifier {
   /// Reservas de los vehículos del conductor con sesión activa (todas, de
   /// más reciente a más antigua). Vacío para vigilante/admin.
   List<Reserva> reservas = const [];
+
+  /// Notificaciones del usuario con sesión (`GET /notificaciones`), más
+  /// recientes primero. La campana muestra cuántas siguen sin leer.
+  List<Notificacion> notificaciones = const [];
+  int get notificacionesNoLeidas => notificaciones.where((n) => !n.leida).length;
 
   /// Celda actual (si la hay) de cada placa normalizada del conductor con
   /// sesión activa. Api-ParkU no incluye el ocupante en `/celdas`, así que
@@ -141,6 +147,7 @@ class ParkingRepository extends ChangeNotifier {
 
   Future<void> _cargarTodo() async {
     await _cargarParqueaderosYCeldas();
+    await _cargarNotificaciones();
     if (_session.esConductor) {
       await _cargarVehiculosConductor();
       await _cargarOcupacionesDeMisVehiculos();
@@ -160,7 +167,51 @@ class ParkingRepository extends ChangeNotifier {
     historial = [];
     _misVehiculos = const [];
     reservas = const [];
+    notificaciones = const [];
     _celdaPorPlaca.clear();
+  }
+
+  // ============================================================
+  // Notificaciones
+  // ============================================================
+
+  Future<void> _cargarNotificaciones() async {
+    try {
+      final data = await ApiClient.instance.get('/notificaciones');
+      notificaciones = data is List ? data.map((e) => Notificacion.fromJson(e as Map<String, dynamic>)).toList() : const [];
+    } catch (_) {
+      // Sin notificaciones no pasa nada: la campana simplemente queda en cero.
+    }
+  }
+
+  Future<void> recargarNotificaciones() async {
+    await _cargarNotificaciones();
+    notifyListeners();
+  }
+
+  /// PATCH /notificaciones/:id/leida — se marca localmente de una vez para
+  /// que la campana baje sin esperar la respuesta.
+  Future<void> marcarNotificacionLeida(Notificacion n) async {
+    if (n.leida) return;
+    n.leida = true;
+    notifyListeners();
+    try {
+      await ApiClient.instance.patch('/notificaciones/${n.id}/leida');
+    } catch (_) {
+      n.leida = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// PATCH /notificaciones/leer-todas.
+  Future<void> marcarTodasNotificacionesLeidas() async {
+    if (notificacionesNoLeidas == 0) return;
+    await ApiClient.instance.patch('/notificaciones/leer-todas');
+    for (final n in notificaciones) {
+      n.leida = true;
+    }
+    notifyListeners();
   }
 
   /// Carga los parqueaderos activos y TODAS sus celdas. Para vigilante/admin

@@ -1,0 +1,32 @@
+{
+  // Tareas de apoyo para correr la app junto con el backend (Api-ParkU).
+  // "API: iniciar" la usan las configuraciones de .vscode/launch.json como
+  // preLaunchTask: si la API ya responde, termina enseguida; si no, la levanta
+  // con `npm run dev` y deja la terminal abierta con sus logs.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "API: iniciar (Api-ParkU)",
+      "type": "shell",
+      "command": "node",
+      "args": ["tool/start_api.js"],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "parku"
+      },
+      "problemMatcher": {
+        "owner": "parku-api",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Iniciando Api-ParkU",
+          "endsPattern": "Servidor ejecutándose en puerto|Api-ParkU ya está corriendo|No encontré Api-ParkU|Falta "
+        }
+      }
+    }
+  ]
+}

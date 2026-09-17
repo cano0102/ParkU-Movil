@@ -6,6 +6,7 @@ import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/parking_zone.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../exit/presentation/pages/exit_register_page.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../parking_map/presentation/pages/parking_map_page.dart';
 import '../../../scan/presentation/pages/scan_plate_page.dart';
 
@@ -92,11 +93,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    GlassIconButton(
-                      icon: Icons.notifications_none_rounded,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No tienes notificaciones nuevas')),
-                      ),
+                    NotificationBell(
+                      noLeidas: _repo.notificacionesNoLeidas,
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsPage())),
                     ),
                   ],
                 ),

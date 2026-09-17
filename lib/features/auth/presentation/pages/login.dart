@@ -240,6 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                                 onPressed: _recuperarClave,
                                 child: const Text('¿Olvidaste tu contraseña?'),
                               ),
+
                             ),
                           ],
                         ),

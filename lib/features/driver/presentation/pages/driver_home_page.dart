@@ -4,6 +4,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../incidents/presentation/pages/report_incident_page.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../parking_map/presentation/pages/parking_map_page.dart';
 import 'driver_reserve_form_page.dart';
 
@@ -102,11 +103,9 @@ class _DriverHomePageState extends State<DriverHomePage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                GlassIconButton(
-                  icon: Icons.notifications_none_rounded,
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No tienes notificaciones nuevas')),
-                  ),
+                NotificationBell(
+                  noLeidas: _repo.notificacionesNoLeidas,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsPage())),
                 ),
               ],
             ),

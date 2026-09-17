@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/auth/presentation/pages/login.dart';
+import '../features/auth/presentation/pages/register.dart'; // ← NUEVO
 import '../features/driver/presentation/pages/driver_home_shell.dart';
 import '../features/home/presentation/pages/home_shell.dart';
 import '../features/home/presentation/pages/welcome_page.dart';
@@ -14,6 +15,7 @@ class AppRoutes {
   static const String splash = '/';
   static const String welcome = '/welcome';
   static const String login = '/login';
+  static const String register = '/register'; // ← se agregó el ';'
   static const String home = '/home';
   static const String driverHome = '/driver-home';
 }
@@ -29,6 +31,8 @@ class AppRouter {
         return const WelcomePage();
       case AppRoutes.login:
         return const LoginPage();
+      case AppRoutes.register: // ← NUEVO
+        return const RegisterPage();
       case AppRoutes.home:
         return const HomeShell();
       case AppRoutes.driverHome:
