@@ -6,7 +6,9 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/data/session_repository.dart';
+import '../../../../core/network/api_config.dart';
 import '../../../../core/network/api_exception.dart';
+import '../widgets/server_config_dialog.dart';
 import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -45,7 +47,16 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushNamedAndRemoveUntil(esConductor ? AppRoutes.driverHome : AppRoutes.home, (route) => false);
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      // Sin código de estado la API ni siquiera respondió: se ofrece de una
+      // vez cambiar la dirección del servidor, que es el arreglo habitual.
+      final sinRespuesta = e.statusCode == null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          duration: Duration(seconds: sinRespuesta ? 8 : 4),
+          action: sinRespuesta ? SnackBarAction(label: 'Configurar', onPressed: _configurarServidor) : null,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -53,6 +64,15 @@ class _LoginPageState extends State<LoginPage> {
 
   void _recuperarClave() {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ForgotPasswordPage()));
+  }
+
+  Future<void> _configurarServidor() async {
+    final cambio = await ServerConfigDialog.mostrar(context);
+    if (!mounted) return;
+    if (cambio) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Servidor: ${ApiConfig.baseUrl}')));
+    }
   }
 
   @override
@@ -228,6 +248,19 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 22),
                     Center(
                       child: Text('SENA · Servicio Nacional de Aprendizaje', style: AppTextStyles.small, textAlign: TextAlign.center),
+                    ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _configurarServidor,
+                        style: TextButton.styleFrom(foregroundColor: AppColors.textPlaceholder),
+                        icon: const Icon(Icons.dns_outlined, size: 16),
+                        label: Text(
+                          'Servidor: ${ApiConfig.descripcion}',
+                          style: AppTextStyles.small.copyWith(color: AppColors.textPlaceholder, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/access_record.dart';
+import '../../../../core/network/api_exception.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -31,11 +32,21 @@ class _HistoryPageState extends State<HistoryPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _refrescar() async {
+    try {
+      await _repo.recargarHistorial();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final registros = _repo.historialFiltrado(_filtro);
-    final ingresos = registros.where((r) => r.estado == AccessStatus.dentro).length;
-    final salidas = registros.where((r) => r.estado == AccessStatus.salio).length;
+    // Una fila por estadía: todas cuentan como ingreso y las cerradas, además, como salida.
+    final ingresos = registros.where((r) => r.esEstadia).length;
+    final salidas = registros.where((r) => r.salida != null).length;
     final novedades = registros.where((r) => r.estado == AccessStatus.novedad).length;
 
     return DarkStatusBarIcons(
@@ -50,7 +61,9 @@ class _HistoryPageState extends State<HistoryPage> {
                 subtitle: 'Movimientos de portería',
                 trailing: TopBarActionButton(
                   icon: Icons.tune_rounded,
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usa los filtros de periodo para acotar el historial'))),
+                  onTap: () => ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Usa los filtros de periodo para acotar el historial'))),
                 ),
               ),
               Padding(
@@ -58,7 +71,11 @@ class _HistoryPageState extends State<HistoryPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FilterChipsRow(options: const ['Hoy', 'Ayer', '7 días'], selected: _filtro, onSelected: (f) => setState(() => _filtro = f)),
+                    FilterChipsRow(
+                      options: const ['Hoy', 'Ayer', '7 días'],
+                      selected: _filtro,
+                      onSelected: (f) => setState(() => _filtro = f),
+                    ),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -71,7 +88,12 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: StatTile(label: 'Novedades', value: '$novedades', icon: Icons.report_gmailerrorred_rounded, accent: AppColors.danger),
+                          child: StatTile(
+                            label: 'Novedades',
+                            value: '$novedades',
+                            icon: Icons.report_gmailerrorred_rounded,
+                            accent: AppColors.danger,
+                          ),
                         ),
                       ],
                     ),
@@ -79,18 +101,34 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
               ),
               Expanded(
-                child: registros.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.history_toggle_off_rounded,
-                        title: 'Sin movimientos en este periodo',
-                        subtitle: 'Prueba con otro rango de fechas o registra un ingreso desde el escáner.',
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                        itemCount: registros.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) => MovementTile(record: registros[index], showStatus: true),
-                      ),
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _refrescar,
+                  child: registros.isEmpty
+                      ? LayoutBuilder(
+                          builder: (context, constraints) => ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                height: constraints.maxHeight,
+                                child: const EmptyState(
+                                  icon: Icons.history_toggle_off_rounded,
+                                  title: 'Sin movimientos en este periodo',
+                                  subtitle:
+                                      'Prueba con otro rango de fechas o registra un ingreso desde el escáner. Desliza hacia abajo para actualizar.',
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          itemCount: registros.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          itemBuilder: (context, index) => MovementTile(record: registros[index], showStatus: true),
+                        ),
+                ),
               ),
             ],
           ),

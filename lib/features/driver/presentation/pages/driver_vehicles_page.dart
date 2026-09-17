@@ -141,7 +141,7 @@ class _DriverVehiclesPageState extends State<DriverVehiclesPage> {
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: DataField(label: 'Celda', value: celda?.codigo ?? '—', mono: true),
+                                      child: DataField(label: 'Celda', value: celda?.codigoConParqueadero ?? '—', mono: true),
                                     ),
                                   ],
                                 ),

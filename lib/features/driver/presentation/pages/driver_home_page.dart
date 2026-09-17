@@ -5,7 +5,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../incidents/presentation/pages/report_incident_page.dart';
 import '../../../parking_map/presentation/pages/parking_map_page.dart';
-import 'driver_reservations_page.dart';
+import 'driver_reserve_form_page.dart';
 
 /// Inicio del conductor: enfocado en reserva de celdas y estado del parqueadero.
 class DriverHomePage extends StatefulWidget {
@@ -161,7 +161,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const DriverReservePage()),
+                            MaterialPageRoute(builder: (_) => const DriverReserveFormPage(), fullscreenDialog: true),
                           ),
                           icon: const Icon(Icons.add_rounded, size: 18),
                           label: const Text('Solicitar reserva'),

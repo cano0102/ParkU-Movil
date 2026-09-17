@@ -121,7 +121,7 @@ class CellDetailPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Celda ${celdaInicial.codigo}',
+                                  'Celda ${celdaInicial.codigoConParqueadero}',
                                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
@@ -168,7 +168,7 @@ class CellDetailPage extends StatelessWidget {
                                 child: PlateBox(placa: celdaInicial.placa ?? '—', size: 18),
                               ),
                               const SizedBox(height: 6),
-                              Text('Ocupada · Celda ${celdaInicial.codigo}', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                              Text('Ocupada · Celda ${celdaInicial.codigoConParqueadero}', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),

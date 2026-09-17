@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/widgets/app_bottom_nav.dart';
+import '../../../../core/data/parking_repository.dart';
 import 'driver_home_page.dart';
 import 'driver_history_page.dart';
 import 'driver_profile_page.dart';
@@ -53,7 +54,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     DriverHomePage(onVerTodo: () => setState(() => _index = 2)), // 0 → Inicio
     const DriverVehiclesPage(),                                   // 1 → Vehículos
     const DriverHistoryPage(),                                    // 2 → Historial
-    const DriverReservePage(),                               // 3 → Reservas
+    const DriverReservationsPage(),                               // 3 → Reservas
     const DriverProfilePage(),                                    // 4 → Perfil
   ];
 
@@ -64,7 +65,12 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
       bottomNavigationBar: AppBottomNav(
         items: _items,
         selectedIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) {
+          setState(() => _index = i);
+          // Al entrar a Historial se vuelve a pedir a la API: así una salida
+          // que portería acaba de registrar aparece sin reiniciar la app.
+          if (i == 2) ParkingRepository.instance.recargarHistorial().catchError((_) {});
+        },
       ),
     );
   }

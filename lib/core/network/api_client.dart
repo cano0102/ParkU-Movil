@@ -18,10 +18,7 @@ class ApiClient {
 
   void setToken(String? token) => _token = token;
 
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (_token != null) 'Authorization': 'Bearer $_token',
-      };
+  Map<String, String> get _headers => {'Content-Type': 'application/json', if (_token != null) 'Authorization': 'Bearer $_token'};
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {
     Map<String, String>? params;
@@ -47,16 +44,39 @@ class ApiClient {
     return _enviar(() => _http.put(_uri(path), headers: _headers, body: body == null ? null : jsonEncode(body)));
   }
 
+  Future<dynamic> patch(String path, {Object? body}) {
+    return _enviar(() => _http.patch(_uri(path), headers: _headers, body: body == null ? null : jsonEncode(body)));
+  }
+
   Future<dynamic> delete(String path) {
     return _enviar(() => _http.delete(_uri(path), headers: _headers));
   }
 
+  /// Una API local responde al instante o no responde (y en un celular
+  /// físico apuntando a 10.0.2.2 la petición se queda colgada: por eso el
+  /// tope). La de la nube (Render) puede tardar en despertar.
+  static const _timeoutLocal = Duration(seconds: 15);
+  static const _timeoutNube = Duration(seconds: 45);
+
+  Duration get _timeout => ApiConfig.usandoRespaldo || ApiConfig.baseUrl.startsWith('https://') ? _timeoutNube : _timeoutLocal;
+
   Future<dynamic> _enviar(Future<http.Response> Function() hacer) async {
     http.Response respuesta;
     try {
-      respuesta = await hacer().timeout(const Duration(seconds: 15));
+      respuesta = await hacer().timeout(_timeout);
     } catch (_) {
-      throw const ApiException('No se pudo conectar con el servidor. Verifica tu conexión o la dirección de la API.');
+      // La API predeterminada (local) no contestó: se prueba la de la nube y,
+      // si está viva, se repite la petición contra ella. `hacer` vuelve a
+      // construir la URI, así que toma la nueva base sola.
+      if (await ApiConfig.intentarRespaldo()) {
+        try {
+          respuesta = await hacer().timeout(_timeoutNube);
+        } catch (_) {
+          throw ApiException(_mensajeSinConexion());
+        }
+      } else {
+        throw ApiException(_mensajeSinConexion());
+      }
     }
 
     final cuerpo = respuesta.body;
@@ -83,5 +103,14 @@ class ApiClient {
       mensaje ??= decodificado['message']?.toString();
     }
     throw ApiException(mensaje ?? 'Error del servidor (${respuesta.statusCode})', statusCode: respuesta.statusCode);
+  }
+
+  /// Sin código de estado la app ni siquiera llegó a hablar con la API. El
+  /// mensaje dice a qué dirección intentó, que es lo primero que hay que
+  /// revisar (emulador vs. celular físico, API apagada, IP cambiada...).
+  static String _mensajeSinConexion() {
+    return 'No se pudo conectar con el servidor en ${ApiConfig.baseUrl}. '
+        'Verifica que Api-ParkU esté corriendo y, si usas un celular físico, '
+        'configura la dirección del servidor en la pantalla de inicio de sesión.';
   }
 }

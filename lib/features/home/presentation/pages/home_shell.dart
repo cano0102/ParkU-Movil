@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/widgets/app_bottom_nav.dart';
+import '../../../../core/data/parking_repository.dart';
 import '../../../history/presentation/pages/history_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../scan/presentation/pages/scan_plate_page.dart';
@@ -36,6 +37,9 @@ class _HomeShellState extends State<HomeShell> {
       return;
     }
     setState(() => _index = tappedIndex <= 1 ? 0 : tappedIndex - 1);
+    // Al abrir Historial se refresca desde la API (ingresos/salidas que
+    // registró otro guarda o el panel web).
+    if (tappedIndex == 2) ParkingRepository.instance.recargarHistorial().catchError((_) {});
   }
 
   int get _navSelectedIndex {

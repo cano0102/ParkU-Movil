@@ -40,16 +40,35 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
 
   bool get _esAsignacion => widget.vehicleParaAsignar != null;
 
+  bool _cargandoAsignables = false;
+
   @override
   void initState() {
     super.initState();
     _repo.addListener(_onRepoChanged);
+    if (_esAsignacion) _cargarAsignables();
   }
 
   @override
   void dispose() {
     _repo.removeListener(_onRepoChanged);
+    if (_esAsignacion) _repo.limpiarAsignables();
     super.dispose();
+  }
+
+  /// Pide a la API qué celdas puede ocupar el vehículo ahora (descarta las
+  /// retenidas por reservas ajenas) y preselecciona la que tenga reservada.
+  Future<void> _cargarAsignables() async {
+    setState(() => _cargandoAsignables = true);
+    final reservada = await _repo.marcarAsignablesPara(widget.vehicleParaAsignar!);
+    if (!mounted) return;
+    setState(() {
+      _cargandoAsignables = false;
+      if (reservada != null) {
+        _zonaSeleccionada = reservada.tipo;
+        _celdaSeleccionada = reservada;
+      }
+    });
   }
 
   void _onRepoChanged() {
@@ -70,13 +89,19 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => CellDetailPage(zona: _zona, celdaInicial: celda)));
       return;
     }
+    if (_esAsignacion && celda.esLibre && celda.retenidaPorReserva) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('La celda ${celda.codigoConParqueadero} está apartada por una reserva próxima: elige otra.')),
+      );
+      return;
+    }
     setState(() => _celdaSeleccionada = celda);
   }
 
   Future<void> _confirmarAsignacion() async {
     final vehicle = widget.vehicleParaAsignar;
     final celda = _celdaSeleccionada;
-    if (vehicle == null || celda == null || !celda.esLibre || _asignando) return;
+    if (vehicle == null || celda == null || !celda.esAsignable || _asignando) return;
     setState(() => _asignando = true);
     try {
       final codigo = await _repo.registrarIngreso(vehicle, celda: celda);
@@ -104,13 +129,37 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
     }
   }
 
+  /// Filas de 5 celdas agrupadas por parqueadero: el mismo número de celda
+  /// (p. ej. "M-01") existe en varios parqueaderos, así que sin la cabecera
+  /// el guarda no sabría cuál está eligiendo.
+  List<_SeccionParqueadero> _secciones(ParkingZone zona) {
+    final porParqueadero = <int?, List<ParkingCell>>{};
+    for (final celda in zona.celdas) {
+      porParqueadero.putIfAbsent(celda.parqueaderoId, () => []).add(celda);
+    }
+    final secciones = <_SeccionParqueadero>[];
+    for (final entrada in porParqueadero.entries) {
+      final celdas = entrada.value;
+      final filas = <List<ParkingCell>>[];
+      for (var i = 0; i < celdas.length; i += _celdasPorFila) {
+        filas.add(celdas.skip(i).take(_celdasPorFila).toList());
+      }
+      final parqueadero = _repo.parqueaderoPorId(entrada.key);
+      secciones.add(_SeccionParqueadero(
+        nombre: parqueadero?.nombreConTipo ?? celdas.first.parqueaderoNombre ?? 'Parqueadero',
+        libres: celdas.where((c) => c.esLibre).length,
+        filas: filas,
+      ));
+    }
+    return secciones;
+  }
+
   @override
   Widget build(BuildContext context) {
     final zona = _zona;
-    final filas = <List<ParkingCell>>[];
-    for (var i = 0; i < zona.celdas.length; i += 5) {
-      filas.add(zona.celdas.skip(i).take(5).toList());
-    }
+    final secciones = _secciones(zona);
+    // Un solo parqueadero: no hace falta cabecera; el nombre ya va en la hoja inferior.
+    final conCabeceras = secciones.length > 1;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -229,11 +278,12 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
                             _Leyenda(color: Color(0xFFEF4444), fondo: Color(0x4DEF4444), texto: 'OCUPADA'),
                             _Leyenda(color: Color(0xFFF59E0B), fondo: Color(0xFF332A10), texto: 'RESERVA'),
                             _Leyenda(color: Color(0xFF94A3B8), fondo: Color(0xFF23262B), texto: 'MANT.'),
+                            _Leyenda(color: Color(0xFF60A5FA), fondo: Color(0x2660A5FA), texto: 'PMR / SENA: preferencial'),
                           ],
                         ),
                       ),
                       Expanded(
-                        child: filas.isEmpty
+                        child: secciones.isEmpty
                             ? Center(
                                 child: Padding(
                                   padding: const EdgeInsets.all(24),
@@ -244,18 +294,20 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
                                   ),
                                 ),
                               )
-                            : ListView.builder(
+                            : ListView(
                                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-                                itemCount: filas.length,
-                                itemBuilder: (context, index) {
-                                  final esCarril = index > 0 && index % 4 == 0;
-                                  final fila = Padding(
-                                    padding: const EdgeInsets.only(bottom: 7),
-                                    child: Row(children: _celdasFila(filas[index], _celdaSeleccionada, _onCellTap)),
-                                  );
-                                  if (!esCarril) return fila;
-                                  return Column(children: [const _Carril(), fila]);
-                                },
+                                children: [
+                                  for (final seccion in secciones) ...[
+                                    if (conCabeceras) _CabeceraParqueadero(nombre: seccion.nombre, libres: seccion.libres),
+                                    for (var i = 0; i < seccion.filas.length; i++) ...[
+                                      if (i > 0 && i % 4 == 0) const _Carril(),
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 7),
+                                        child: Row(children: _celdasFila(seccion.filas[i], _celdaSeleccionada, _onCellTap)),
+                                      ),
+                                    ],
+                                  ],
+                                ],
                               ),
                       ),
                     ],
@@ -265,9 +317,9 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
               const SizedBox(height: 12),
               _BottomSheet(
                 celda: _celdaSeleccionada,
-                zonaNombre: '${zona.tipo.zona} · ${zona.etiqueta}',
+                zonaNombre: _celdaSeleccionada?.parqueaderoNombre ?? '${zona.tipo.zona} · ${zona.etiqueta}',
                 esAsignacion: _esAsignacion,
-                asignando: _asignando,
+                asignando: _asignando || _cargandoAsignables,
                 onAsignar: _confirmarAsignacion,
               ),
             ],
@@ -278,10 +330,19 @@ class _ParkingMapPageState extends State<ParkingMapPage> {
   }
 }
 
+/// Celdas por fila del mapa. Las filas incompletas se rellenan con huecos
+/// para que una celda sola (parqueaderos pequeños) no se estire a todo el
+/// ancho y todas las casillas midan lo mismo.
+const _celdasPorFila = 5;
+
 List<Widget> _celdasFila(List<ParkingCell> celdas, ParkingCell? seleccionada, ValueChanged<ParkingCell> onTap) {
   final widgets = <Widget>[];
-  for (var i = 0; i < celdas.length; i++) {
+  for (var i = 0; i < _celdasPorFila; i++) {
     if (i > 0) widgets.add(const SizedBox(width: 7));
+    if (i >= celdas.length) {
+      widgets.add(const Expanded(child: SizedBox()));
+      continue;
+    }
     widgets.add(Expanded(
       child: CellTile(
         cell: celdas[i],
@@ -291,6 +352,43 @@ List<Widget> _celdasFila(List<ParkingCell> celdas, ParkingCell? seleccionada, Va
     ));
   }
   return widgets;
+}
+
+class _SeccionParqueadero {
+  final String nombre;
+  final int libres;
+  final List<List<ParkingCell>> filas;
+  const _SeccionParqueadero({required this.nombre, required this.libres, required this.filas});
+}
+
+/// Cabecera de cada parqueadero dentro de la zona (solo cuando hay varios).
+class _CabeceraParqueadero extends StatelessWidget {
+  final String nombre;
+  final int libres;
+  const _CabeceraParqueadero({required this.nombre, required this.libres});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 6, 2, 8),
+      child: Row(
+        children: [
+          const Icon(Icons.local_parking_rounded, size: 14, color: AppColors.primaryAccent),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              nombre.toUpperCase(),
+              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('$libres libres', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.darkMuted)),
+        ],
+      ),
+    );
+  }
 }
 
 /// Pestaña de zona (carros / motos) en la parte superior del mapa.
@@ -445,7 +543,12 @@ class _BottomSheet extends StatelessWidget {
                       children: [
                         Text('Celda ${celda!.codigo}', style: AppTextStyles.heading3.copyWith(fontSize: 17)),
                         const SizedBox(height: 2),
-                        Text(zonaNombre, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          celda!.usabilidad.esPreferencial ? '$zonaNombre · ${celda!.usabilidad.label}' : zonaNombre,
+                          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
@@ -476,7 +579,7 @@ class _BottomSheet extends StatelessWidget {
                     ],
                   ),
                 )
-              else if (celda!.esBloqueada)
+              else if (celda!.esBloqueada && !celda!.reservadaParaVehiculo)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(16)),
@@ -490,7 +593,23 @@ class _BottomSheet extends StatelessWidget {
                     ],
                   ),
                 )
-              else if (esAsignacion)
+              else if (esAsignacion) ...[
+                if (celda!.reservadaParaVehiculo) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(16)),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.bookmark_rounded, size: 18, color: AppColors.warningDark),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Reservada para este vehículo: es la que le corresponde.', style: TextStyle(color: AppColors.warningDark, fontSize: 13, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -506,8 +625,8 @@ class _BottomSheet extends StatelessWidget {
                             ],
                           ),
                   ),
-                )
-              else
+                ),
+              ] else
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(16)),
