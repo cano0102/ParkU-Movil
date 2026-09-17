@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
+import '../../../../core/utils/validators.dart';
 
 /// Formulario para que el conductor solicite la reserva de una celda.
 /// La solicitud queda PENDIENTE hasta que un admin o vigilante la apruebe.
@@ -13,18 +14,42 @@ class DriverReservePage extends StatefulWidget {
 }
 
 class _DriverReservePageState extends State<DriverReservePage> {
+  final _formKey = GlobalKey<FormState>();
   String? _vehiculo;
   String? _parqueadero;
   String? _celda;
   DateTime _fecha = DateTime.now();
-  TimeOfDay _horaInicio = const TimeOfDay(hour: 23, minute: 59);
-  TimeOfDay _horaFin = const TimeOfDay(hour: 23, minute: 59);
+  TimeOfDay _horaInicio = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _horaFin = const TimeOfDay(hour: 9, minute: 0);
   final _motivoCtrl = TextEditingController();
+  /// Solo se muestra el error de horas tras el primer intento de envío —
+  /// mostrarlo desde el inicio (con la hora de fin ya menor a la de inicio
+  /// antes de que la persona toque nada) no ayuda, solo distrae.
+  bool _horasTocadas = false;
+
+  /// Duración mínima de una reserva: menos de esto no le sirve a nadie y
+  /// complica la agenda de la celda para todos los demás.
+  static const _duracionMinimaMinutos = 60;
 
   @override
   void dispose() {
     _motivoCtrl.dispose();
     super.dispose();
+  }
+
+  int _minutosDesdeMedianoche(TimeOfDay h) => h.hour * 60 + h.minute;
+
+  /// Motivo por el que el rango de horas no sirve, o null si es válido.
+  String? get _errorHoras {
+    final diferencia =
+        _minutosDesdeMedianoche(_horaFin) - _minutosDesdeMedianoche(_horaInicio);
+    if (diferencia <= 0) {
+      return 'La hora de fin debe ser posterior a la de inicio';
+    }
+    if (diferencia < _duracionMinimaMinutos) {
+      return 'La reserva debe durar al menos 1 hora';
+    }
+    return null;
   }
 
   Future<void> _seleccionarFecha() async {
@@ -66,9 +91,14 @@ class _DriverReservePageState extends State<DriverReservePage> {
   }
 
   void _enviarSolicitud() {
-    if (_vehiculo == null || _parqueadero == null || _celda == null) {
+    // Fuerza que se muestren los errores de los 3 desplegables (Form.validate
+    // los revalida) y de motivo; el rango de horas no es un FormField nativo,
+    // así que se valida aparte y también se refleja en pantalla con setState.
+    final formValido = _formKey.currentState?.validate() ?? false;
+    setState(() => _horasTocadas = true);
+    if (!formValido || _errorHoras != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa todos los campos obligatorios')),
+        const SnackBar(content: Text('Revisa los campos obligatorios del formulario')),
       );
       return;
     }
@@ -93,7 +123,9 @@ class _DriverReservePageState extends State<DriverReservePage> {
         ),
       ),
       body: SafeArea(
-        child: ListView(
+        child: Form(
+          key: _formKey,
+          child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           children: [
             // ─── Encabezado ───
@@ -164,6 +196,7 @@ class _DriverReservePageState extends State<DriverReservePage> {
                 DropdownMenuItem(value: 'XYZ789', child: Text('XYZ789')),
               ],
               onChanged: (v) => setState(() => _vehiculo = v),
+              validator: (v) => v == null ? 'Selecciona un vehículo' : null,
             ),
             const SizedBox(height: 18),
 
@@ -191,6 +224,7 @@ class _DriverReservePageState extends State<DriverReservePage> {
                           _parqueadero = v;
                           _celda = null;
                         }),
+                        validator: (v) => v == null ? 'Elige un parqueadero' : null,
                       ),
                     ],
                   ),
@@ -218,6 +252,7 @@ class _DriverReservePageState extends State<DriverReservePage> {
                         onChanged: _parqueadero == null
                             ? null
                             : (v) => setState(() => _celda = v),
+                        validator: (v) => v == null ? 'Elige una celda' : null,
                       ),
                     ],
                   ),
@@ -251,13 +286,6 @@ class _DriverReservePageState extends State<DriverReservePage> {
                         icon: Icons.access_time_rounded,
                         onTap: () => _seleccionarHora(true),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Entre 23:59 y 23:59',
-                        style: AppTextStyles.small.copyWith(
-                          color: AppColors.textPlaceholder,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -275,9 +303,9 @@ class _DriverReservePageState extends State<DriverReservePage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Desde 23:59 (mínimo 1 hora)',
+                        (_horasTocadas ? _errorHoras : null) ?? 'Duración mínima: 1 hora',
                         style: AppTextStyles.small.copyWith(
-                          color: AppColors.textPlaceholder,
+                          color: _horasTocadas && _errorHoras != null ? AppColors.danger : AppColors.textPlaceholder,
                         ),
                       ),
                     ],
@@ -290,9 +318,11 @@ class _DriverReservePageState extends State<DriverReservePage> {
             // ─── Motivo ───
             const _Label('Motivo / Justificación *'),
             const SizedBox(height: 8),
-            TextField(
+            TextFormField(
               controller: _motivoCtrl,
               maxLines: 4,
+              maxLength: 250,
+              validator: (v) => Validators.textoLargo(v, etiqueta: 'el motivo', min: 5, max: 250),
               decoration: InputDecoration(
                 hintText: 'Ej. Necesito parquear mientras asisto a clase...',
                 hintStyle: AppTextStyles.caption.copyWith(
@@ -358,6 +388,7 @@ class _DriverReservePageState extends State<DriverReservePage> {
               ],
             ),
           ],
+          ),
         ),
       ),
     );
@@ -386,38 +417,56 @@ class _DropdownField<T> extends StatelessWidget {
   final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?>? onChanged;
+  final FormFieldValidator<T>? validator;
 
   const _DropdownField({
     required this.hint,
     required this.value,
     required this.items,
     required this.onChanged,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+    // DropdownButtonFormField (no DropdownButton suelto) para que participe
+    // de Form.validate() como los demás campos, con el mismo look que ya
+    // tenía (borde redondeado, fondo de superficie) pero ahora capaz de
+    // mostrar su propio error debajo cuando no se ha elegido nada.
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      hint: Text(
+        hint,
+        style: AppTextStyles.body.copyWith(
+          color: AppColors.textPlaceholder,
+          fontSize: 13.5,
+        ),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          hint: Text(
-            hint,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.textPlaceholder,
-              fontSize: 13.5,
-            ),
-          ),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-          items: items,
-          onChanged: onChanged,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+      borderRadius: BorderRadius.circular(12),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppColors.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.danger),
         ),
       ),
     );

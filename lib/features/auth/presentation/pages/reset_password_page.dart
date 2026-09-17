@@ -5,6 +5,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 
 /// Segundo paso del flujo de recuperación de contraseña (HU 02.2.8): se
 /// pega el token recibido por correo y se fija la nueva contraseña.
@@ -101,7 +102,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) return 'Ingresa el código recibido';
-                          if (value.trim().length < 32) return 'El código no parece completo';
+                          // El backend genera el token con crypto.randomBytes(32).toString('hex'):
+                          // siempre 64 caracteres hexadecimales exactos.
+                          if (value.trim().length != 64) return 'El código no parece completo';
                           return null;
                         },
                       ),
@@ -124,11 +127,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             onPressed: () => setState(() => _ocultarClave = !_ocultarClave),
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Ingresa la nueva contraseña';
-                          if (value.length < 8) return 'Debe tener al menos 8 caracteres';
-                          return null;
-                        },
+                        validator: Validators.contrasenaNueva,
                       ),
                       const SizedBox(height: 16),
                       Text('Confirmar contraseña', style: AppTextStyles.label),
@@ -143,10 +142,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           hintText: '••••••••',
                           prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textPlaceholder),
                         ),
-                        validator: (value) {
-                          if (value != _claveController.text) return 'Las contraseñas no coinciden';
-                          return null;
-                        },
+                        validator: Validators.confirmarContrasena(_claveController),
                       ),
                       const SizedBox(height: 22),
                       SizedBox(

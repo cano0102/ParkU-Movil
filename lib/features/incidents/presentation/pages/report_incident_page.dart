@@ -4,6 +4,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 
 /// Tipos de novedad que admite Api-ParkU (ver novedades.controller.js).
 /// QUEJA es el que usa el conductor para reportar una inconformidad; el
@@ -191,6 +192,7 @@ class _ReportIncidentPageState extends State<ReportIncidentPage> {
               TextFormField(
                 controller: _descripcionController,
                 maxLines: 5,
+                maxLength: 500,
                 decoration: InputDecoration(
                   hintText: 'Describe lo sucedido con el mayor detalle posible...',
                   hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textPlaceholder),
@@ -201,10 +203,7 @@ class _ReportIncidentPageState extends State<ReportIncidentPage> {
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.divider)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().length < 10) return 'Describe con al menos 10 caracteres';
-                  return null;
-                },
+                validator: (value) => Validators.textoLargo(value, etiqueta: 'una descripción', min: 10, max: 500),
               ),
               const SizedBox(height: 30),
               Row(

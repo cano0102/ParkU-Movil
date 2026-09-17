@@ -7,6 +7,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/utils/validators.dart';
 import 'confirm_plate_page.dart';
 
 /// Placas usadas para simular la lectura automática de la cámara mientras
@@ -53,19 +54,26 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
     final controller = TextEditingController();
     final placa = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Digitar placa'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          style: AppTextStyles.plate(size: 18),
-          decoration: const InputDecoration(hintText: 'Ej. WGY482'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Continuar')),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final error = Validators.placaCualquierTipo(controller.text);
+          return AlertDialog(
+            title: const Text('Digitar placa'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 6,
+              style: AppTextStyles.plate(size: 18),
+              decoration: InputDecoration(hintText: 'Ej. WGY482', errorText: error, counterText: ''),
+              onChanged: (_) => setDialogState(() {}),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              FilledButton(onPressed: error == null ? () => Navigator.pop(ctx, controller.text) : null, child: const Text('Continuar')),
+            ],
+          );
+        },
       ),
     );
     if (placa == null || placa.trim().isEmpty) return;
