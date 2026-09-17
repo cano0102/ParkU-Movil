@@ -4,6 +4,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 import 'reset_password_page.dart';
 
 /// Primer paso del flujo de recuperación de contraseña (HU 02.2.7): se pide
@@ -100,11 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             hintText: 'nombre@sena.edu.co',
                             prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textPlaceholder),
                           ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) return 'Ingresa tu correo institucional';
-                            if (!value.contains('@')) return 'Correo inválido';
-                            return null;
-                          },
+                          validator: Validators.correo,
                         ),
                         const SizedBox(height: 20),
                         SizedBox(

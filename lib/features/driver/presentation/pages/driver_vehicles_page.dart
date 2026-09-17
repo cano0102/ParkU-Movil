@@ -5,6 +5,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 
 /// "Mis vehículos": los vehículos registrados a nombre del conductor,
 /// con su estado actual, y la opción de registrar uno nuevo.
@@ -240,16 +241,14 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                 TextFormField(
                   controller: _placaController,
                   textCapitalization: TextCapitalization.characters,
+                  maxLength: 6,
                   style: AppTextStyles.plate(size: 16),
-                  decoration: const InputDecoration(
-                    hintText: 'Ej. WGY482',
-                    prefixIcon: Icon(Icons.pin_outlined, color: AppColors.textPlaceholder),
+                  decoration: InputDecoration(
+                    hintText: _tipo == VehicleType.moto ? 'Ej. ABC12D' : 'Ej. WGY482',
+                    prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.textPlaceholder),
+                    counterText: '',
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Ingresa la placa';
-                    if (ParkingRepository.normaliza(value).length < 5) return 'Placa inválida';
-                    return null;
-                  },
+                  validator: (value) => Validators.placa(value, _tipo),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -263,8 +262,9 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _marcaController,
-                            decoration: const InputDecoration(hintText: 'Ej. Mazda 3'),
-                            validator: (value) => (value == null || value.trim().isEmpty) ? 'Requerido' : null,
+                            maxLength: 100,
+                            decoration: const InputDecoration(hintText: 'Ej. Mazda 3', counterText: ''),
+                            validator: (value) => Validators.requerido(value, 'la marca y línea', max: 100),
                           ),
                         ],
                       ),
@@ -278,8 +278,9 @@ class _RegistrarVehiculoSheetState extends State<_RegistrarVehiculoSheet> {
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _colorController,
-                            decoration: const InputDecoration(hintText: 'Ej. Gris'),
-                            validator: (value) => (value == null || value.trim().isEmpty) ? 'Requerido' : null,
+                            maxLength: 50,
+                            decoration: const InputDecoration(hintText: 'Ej. Gris', counterText: ''),
+                            validator: (value) => Validators.requerido(value, 'el color', max: 50),
                           ),
                         ],
                       ),
