@@ -5,6 +5,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 import 'vehicle_authorized_page.dart';
 import 'vehicle_denied_page.dart';
 
@@ -43,13 +44,26 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
     final controller = TextEditingController(text: _placa);
     final resultado = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Corregir placa'),
-        content: TextField(controller: controller, autofocus: true, textCapitalization: TextCapitalization.characters, maxLength: 8, style: AppTextStyles.plate(size: 18)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Guardar')),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final error = Validators.placa(controller.text, _tipoSeleccionado);
+          return AlertDialog(
+            title: const Text('Corregir placa'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 6,
+              style: AppTextStyles.plate(size: 18),
+              decoration: InputDecoration(errorText: error, counterText: ''),
+              onChanged: (_) => setDialogState(() {}),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              FilledButton(onPressed: error == null ? () => Navigator.pop(ctx, controller.text) : null, child: const Text('Guardar')),
+            ],
+          );
+        },
       ),
     );
     if (resultado != null && resultado.trim().isNotEmpty) {

@@ -8,6 +8,7 @@ import '../../../../core/data/parking_repository.dart';
 import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_config.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 import '../widgets/server_config_dialog.dart';
 import 'forgot_password_page.dart';
 
@@ -182,11 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                                 hintText: 'nombre@sena.edu.co',
                                 prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textPlaceholder),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) return 'Ingresa tu correo institucional';
-                                if (!value.contains('@')) return 'Correo inválido';
-                                return null;
-                              },
+                              validator: Validators.correo,
                             ),
                             const SizedBox(height: 16),
                             Text('Contraseña', style: AppTextStyles.label),
@@ -208,10 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                                   onPressed: () => setState(() => _ocultarClave = !_ocultarClave),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) return 'Ingresa tu contraseña';
-                                return null;
-                              },
+                              validator: Validators.contrasenaLogin,
                             ),
                             const SizedBox(height: 22),
                             SizedBox(

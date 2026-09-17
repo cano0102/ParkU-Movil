@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
@@ -102,9 +103,12 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
                         controller: _controller,
                         onChanged: _buscar,
                         textCapitalization: TextCapitalization.characters,
+                        maxLength: 6,
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]'))],
                         style: AppTextStyles.plate(size: 15, color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           hintText: 'Buscar por placa',
+                          counterText: '',
                           prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textPlaceholder),
                           suffixIcon: IconButton(
                             tooltip: 'Escanear placa',
