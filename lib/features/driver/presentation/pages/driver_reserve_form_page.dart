@@ -250,7 +250,7 @@ class _DriverReserveFormPageState extends State<DriverReserveFormPage> {
                 action: OutlinedButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Volver')),
               )
             : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 children: [
                   // ─── Encabezado ───
                   Row(
@@ -453,43 +453,50 @@ class _DriverReserveFormPageState extends State<DriverReserveFormPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 22),
-
-                  // ─── Botones ───
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _enviando ? null : () => Navigator.of(context).pop(false),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: AppColors.divider),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: Text('Cancelar', style: AppTextStyles.bodyBold.copyWith(color: AppColors.textPrimary)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _enviando ? null : _enviarSolicitud,
-                          icon: _enviando
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const Icon(Icons.send_rounded, size: 18),
-                          label: Text(_enviando ? 'Enviando…' : 'Enviar solicitud'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
       ),
+      // Botones en una barra fija al pie: antes iban al final de la lista y,
+      // con el teclado abierto al escribir el motivo, quedaban tapados y
+      // parecía que no había cómo enviar. Al ser bottomNavigationBar, el
+      // Scaffold la sube por encima del teclado.
+      bottomNavigationBar: vehiculos.isEmpty
+          ? null
+          : BottomActionBar(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _enviando ? null : () => Navigator.of(context).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: AppColors.divider),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Cancelar', style: AppTextStyles.bodyBold.copyWith(color: AppColors.textPrimary)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _enviando ? null : _enviarSolicitud,
+                      icon: _enviando
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(_enviando ? 'Enviando…' : 'Enviar solicitud'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
