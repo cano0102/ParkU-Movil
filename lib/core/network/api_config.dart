@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,23 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// 1. La que la persona guardó desde la app ("Configurar servidor" en la
 ///    pantalla de inicio de sesión). Se conserva entre arranques.
-/// 2. `--dart-define=API_BASE_URL=http://192.168.1.10:3000/api` al compilar.
-/// 3. La predeterminada según dónde corre la app: en el emulador de Android
-///    `10.0.2.2` (así ve Android al propio computador); en escritorio, Chrome
-///    o iOS, `localhost`.
-/// 4. Si la predeterminada no responde, la API desplegada en la nube
-///    ([nube]), que es la misma que usa el frontend web. Ese cambio dura
-///    solo la sesión: al siguiente arranque se vuelve a intentar la local.
-///
-/// Un celular físico no puede usar `localhost` ni `10.0.2.2`: o se le fija
-/// la IP del computador (opción 1 o 2) o cae solo en la nube (opción 4).
+/// 2. `--dart-define=API_BASE_URL=...` al compilar.
+/// 3. La API desplegada en la nube ([nube]).
 class ApiConfig {
   ApiConfig._();
 
   static const String _override = String.fromEnvironment('API_BASE_URL');
   static const String _kBaseUrl = 'parku_api_base_url';
 
-  /// Api-ParkU desplegada (Render). Misma base de datos que la local.
+  /// Api-ParkU desplegada (Render), usada por la versión de entrega.
   static const String nube = 'https://api-parku-e017.onrender.com/api';
 
   static String? _personalizada;
@@ -32,27 +23,22 @@ class ApiConfig {
 
   static String get predeterminada {
     if (_override.isNotEmpty) return _override;
-    // El emulador de Android no puede resolver "localhost" como el propio
-    // computador: 10.0.2.2 es la dirección que Android reserva para eso.
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api';
-    }
-    return 'http://localhost:3000/api';
+    return nube;
   }
 
-  static String get baseUrl => _personalizada ?? _respaldo ?? predeterminada;
+  static String get baseUrl => predeterminada;
 
   /// true si la persona fijó una dirección distinta a la predeterminada.
-  static bool get esPersonalizada => _personalizada != null;
+  static bool get esPersonalizada => false;
 
   /// true si en esta sesión se cayó a la nube porque la local no respondió.
-  static bool get usandoRespaldo => _personalizada == null && _respaldo != null;
+  static bool get usandoRespaldo => false;
 
   /// Texto corto para mostrar de dónde se están leyendo los datos.
   static String get descripcion {
     if (esPersonalizada) return _personalizada!;
     if (usandoRespaldo) return 'Nube (Render)';
-    return 'Local · ${predeterminada.replaceFirst(RegExp(r'^https?://'), '').replaceFirst(RegExp(r'/api$'), '')}';
+    return 'Nube (Render)';
   }
 
   /// Recupera la dirección guardada (si la hay). Se llama una vez al arrancar,
@@ -60,8 +46,10 @@ class ApiConfig {
   static Future<void> cargar() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final guardada = prefs.getString(_kBaseUrl);
-      _personalizada = (guardada == null || guardada.isEmpty) ? null : guardada;
+      if (prefs.containsKey(_kBaseUrl)) {
+        await prefs.remove(_kBaseUrl);
+      }
+      _personalizada = null;
     } catch (_) {
       _personalizada = null;
     }
@@ -81,7 +69,7 @@ class ApiConfig {
       _personalizada = normalizada;
       await prefs.setString(_kBaseUrl, normalizada);
     }
-    return baseUrl;
+    return predeterminada;
   }
 
   /// `192.168.1.10:3000` → `http://192.168.1.10:3000/api`.
@@ -118,12 +106,8 @@ class ApiConfig {
     }
   }
 
-  /// Cuando la dirección predeterminada no contesta, prueba la de la nube y,
-  /// si responde, la deja como base para el resto de la sesión. Devuelve
-  /// `true` si cambió (y por tanto vale la pena reintentar la petición).
-  ///
-  /// No aplica si la persona fijó una dirección a mano: si escribió una IP
-  /// es porque quiere esa, y un fallo ahí debe verse como tal.
+  /// Conservado para que el cliente pueda reintentar la nube tras un fallo
+  /// transitorio sin cambiar la URL pública configurada.
   static Future<bool> intentarRespaldo() async {
     if (_personalizada != null || _respaldo != null) return false;
     // Render duerme el servicio cuando nadie lo usa y tarda en despertar: la

@@ -2,14 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      // Levanta Api-ParkU (si no está ya corriendo) y luego la app. En el
-      // emulador de Android la app llega a la API por 10.0.2.2:3000; en
-      // escritorio/Chrome por localhost:3000.
-      "name": "ParkU Móvil + API (emulador Android o escritorio/Chrome)",
+      "name": "ParkU Móvil (API en la nube)",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart",
-      "preLaunchTask": "API: iniciar (Api-ParkU)"
+      "program": "lib/main.dart"
     },
     {
       "name": "ParkU Móvil (sin levantar la API)",
@@ -18,16 +14,12 @@
       "program": "lib/main.dart"
     },
     {
-      // Un celular físico no ve "localhost" ni 10.0.2.2 del computador: hay que
-      // apuntarlo a la IP del PC en la red Wi-Fi (ipconfig → "Dirección IPv4").
-      // También se puede cambiar desde la app: en Iniciar sesión → "Configurar servidor".
-      "name": "ParkU Móvil (dispositivo físico — API en tu computador)",
+      "name": "ParkU Móvil (nube explícita)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "preLaunchTask": "API: iniciar (Api-ParkU)",
       "toolArgs": [
-        "--dart-define=API_BASE_URL=http://10.1.94.181:3000/api"
+        "--dart-define=API_BASE_URL=https://api-parku-e017.onrender.com/api"
       ]
     }
   ]

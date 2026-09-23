@@ -19,6 +19,12 @@ dependencies:
   shared_preferences: ^2.3.3
   url_launcher: ^6.3.2
   camera: ^0.12.1
+  # Implementación Camera2 del plugin de cámara. Se declara a propósito: la
+  # implementación por omisión en Android (camera_android_camerax) revienta al
+  # abrir la vista previa en este proyecto con
+  # "CloneNotSupportedException: kotlinx.coroutines.CompletableDeferredImpl"
+  # (androidx.camera.camera2.pipe). Con camera_android el escáner funciona.
+  camera_android: ^0.10.10
   google_mlkit_text_recognition: ^0.17.1
 
 dev_dependencies:
@@ -27,12 +33,35 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   flutter_native_splash: ^2.4.8
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/logo.png
+
+# Ícono de la app: el logo del SENA, no el de Flutter. Se regenera con
+# `dart run flutter_launcher_icons` cuando cambie assets/icon/.
+#   - app_icon.png            -> ícono completo (launchers antiguos, iOS, web)
+#   - app_icon_foreground.png -> figura sola, transparente, para el ícono
+#     adaptativo de Android 8+; el fondo lo pone adaptive_icon_background.
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: "#39A900"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # Android 13+: el mismo trazo en monocromo para los íconos con tema.
+  adaptive_icon_monochrome: "assets/icon/app_icon_foreground.png"
+  web:
+    generate: true
+    background_color: "#39A900"
+    theme_color: "#39A900"
+  windows:
+    generate: true
+    icon_size: 256
 
 flutter_native_splash:
   color: "#39A900"

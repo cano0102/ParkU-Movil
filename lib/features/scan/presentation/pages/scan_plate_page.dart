@@ -30,7 +30,10 @@ class ScanPlatePage extends StatefulWidget {
 }
 
 class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static const _intervaloLectura = Duration(milliseconds: 600);
+  /// Cada cuánto se pasa un fotograma por el OCR. Con menos de esto el
+  /// reconocimiento no alcanza a terminar en equipos modestos y la cola de
+  /// fotogramas termina congelando la interfaz.
+  static const _intervaloLectura = Duration(milliseconds: 900);
 
   /// Lecturas seguidas iguales necesarias para confirmar sola la placa.
   static const _lecturasParaConfirmar = 2;
@@ -54,6 +57,10 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
   bool _permisoDenegado = false;
 
   final TextRecognizer _ocr = TextRecognizer(script: TextRecognitionScript.latin);
+  /// El stream de fotogramas está entregando imágenes válidas. Se baja ANTES
+  /// de detener la cámara: un fotograma que llegue después apunta a memoria
+  /// que el plugin ya recicló, y leerlo mata el proceso (SIGSEGV).
+  bool _streamActivo = false;
   bool _procesando = false;
   DateTime _ultimoProcesado = DateTime.fromMillisecondsSinceEpoch(0);
   String? _ultimaLectura;
@@ -108,7 +115,9 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
 
       final controller = CameraController(
         _descripcion!,
-        ResolutionPreset.high,
+        // Media basta para leer una placa encuadrada y baja mucho el costo de
+        // copiar y analizar cada fotograma (en alta, el OCR no alcanza).
+        ResolutionPreset.medium,
         enableAudio: false,
         // ML Kit lee NV21 en Android y BGRA en iOS directamente desde el
         // fotograma, sin convertir nada por software.
@@ -121,6 +130,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
       }
       _camara = controller;
       if (_flashOn) await _aplicarFlash();
+      _streamActivo = true;
       await controller.startImageStream(_onFotograma);
       setState(() => _iniciandoCamara = false);
     } on CameraException catch (e) {
@@ -145,6 +155,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
   }
 
   Future<void> _detenerCamara() async {
+    _streamActivo = false;
     final controller = _camara;
     _camara = null;
     if (controller == null) return;
@@ -177,7 +188,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
   // ------------------------------------------------------------------
 
   Future<void> _onFotograma(CameraImage imagen) async {
-    if (_procesando || _navegando) return;
+    if (!_streamActivo || _procesando || _navegando) return;
     final ahora = DateTime.now();
     if (ahora.difference(_ultimoProcesado) < _intervaloLectura) return;
     _ultimoProcesado = ahora;
@@ -243,7 +254,10 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
 
     final plano = imagen.planes.first;
     return InputImage.fromBytes(
-      bytes: plano.bytes,
+      // Copia: `plano.bytes` apunta a memoria de la cámara que se recicla en
+      // cuanto vuelve este callback, y el OCR la lee después (es asíncrono).
+      // Sin la copia la app muere con SIGSEGV en el hilo de la cámara.
+      bytes: Uint8List.fromList(plano.bytes),
       metadata: InputImageMetadata(
         size: Size(imagen.width.toDouble(), imagen.height.toDouble()),
         rotation: rotacion,
@@ -296,7 +310,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
     }
     setState(() => _capturando = true);
     try {
-      if (controller.value.isStreamingImages) await controller.stopImageStream();
+      await _pausarLectura();
       final foto = await controller.takePicture();
       final texto = await _ocr.processImage(InputImage.fromFilePath(foto.path));
       final placa = PlateReader.extraer(texto.text);
@@ -314,17 +328,17 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
     } finally {
       if (mounted && !_navegando) {
         setState(() => _capturando = false);
-        final c = _camara;
-        if (c != null && c.value.isInitialized && !c.value.isStreamingImages) {
-          try {
-            await c.startImageStream(_onFotograma);
-          } catch (_) {}
-        }
+        await _reanudarLectura();
       }
     }
   }
 
   Future<void> _digitarManual() async {
+    // Con un diálogo encima, el plugin puede reconfigurar la cámara y soltar
+    // los búferes del stream; procesar un fotograma en ese momento tumba la
+    // app. Se pausa la lectura mientras el diálogo está abierto.
+    await _pausarLectura();
+    if (!mounted) return;
     final controller = TextEditingController();
     final placa = await showDialog<String>(
       context: context,
@@ -350,9 +364,35 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
         },
       ),
     );
-    if (placa == null || placa.trim().isEmpty) return;
+    if (placa == null || placa.trim().isEmpty) {
+      // Se canceló: vuelve a leer con la cámara.
+      await _reanudarLectura();
+      return;
+    }
     if (!mounted) return;
     _confirmar(ParkingRepository.normaliza(placa));
+  }
+
+  /// Deja de leer fotogramas sin cerrar la cámara (la vista previa sigue).
+  Future<void> _pausarLectura() async {
+    if (!_streamActivo) return;
+    _streamActivo = false;
+    final controller = _camara;
+    if (controller == null) return;
+    try {
+      if (controller.value.isStreamingImages) await controller.stopImageStream();
+    } catch (_) {}
+  }
+
+  Future<void> _reanudarLectura() async {
+    final controller = _camara;
+    if (controller == null || !controller.value.isInitialized || _streamActivo) return;
+    try {
+      _streamActivo = true;
+      if (!controller.value.isStreamingImages) await controller.startImageStream(_onFotograma);
+    } catch (_) {
+      _streamActivo = false;
+    }
   }
 
   // ------------------------------------------------------------------

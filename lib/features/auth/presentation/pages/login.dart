@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
@@ -10,7 +11,6 @@ import '../../../../core/network/api_config.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/utils/validators.dart';
 import '../widgets/server_config_dialog.dart';
-import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -63,15 +63,24 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _recuperarClave() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ForgotPasswordPage()));
+  Future<void> _recuperarClave() async {
+    final recuperacionWeb = Uri.parse('https://park-u.vercel.app/forgot-password');
+    final abierto = await launchUrl(recuperacionWeb, mode: LaunchMode.externalApplication);
+    if (!abierto && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo abrir el navegador. Entra a ${recuperacionWeb.host}/forgot-password para recuperar tu contraseña.')),
+      );
+    }
   }
 
   Future<void> _configurarServidor() async {
     final cambio = await ServerConfigDialog.mostrar(context);
     if (!mounted) return;
+    // Siempre se repinta: la etiqueta del pie muestra la dirección efectiva, y
+    // esa puede cambiar aunque el diálogo diga que no (p. ej. la app había
+    // caído al respaldo de la nube y guardar la predeterminada lo descarta).
+    setState(() {});
     if (cambio) {
-      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Servidor: ${ApiConfig.baseUrl}')));
     }
   }
