@@ -24,6 +24,7 @@ import 'package:parku_movil/features/parking_map/presentation/pages/cell_detail_
 import 'package:parku_movil/features/parking_map/presentation/pages/parking_map_page.dart';
 import 'package:parku_movil/features/profile/presentation/pages/profile_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/confirm_plate_page.dart';
+import 'package:parku_movil/features/scan/presentation/pages/register_vehicle_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/scan_plate_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/vehicle_authorized_page.dart';
 import 'package:parku_movil/features/scan/presentation/pages/vehicle_denied_page.dart';
@@ -88,7 +89,8 @@ void main() {
         'Escanear placa': const ScanPlatePage(),
         'Confirmar placa': const ConfirmPlatePage(placaDetectada: 'WGY482'),
         'Vehículo autorizado': VehicleAuthorizedPage(vehicle: vehicle),
-        'Vehículo no autorizado': const VehicleDeniedPage(placa: 'TQP71D'),
+        'Vehículo no autorizado': const VehicleDeniedPage(placa: 'TQP71D', tipo: VehicleType.moto),
+        'Registrar vehículo': const RegisterVehiclePage(placaSugerida: 'TQP71D', tipoSugerido: VehicleType.moto),
         'Registrar salida': const ExitRegisterPage(),
         'Historial': const HistoryPage(),
         'Perfil': const ProfilePage(),

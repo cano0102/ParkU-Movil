@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
@@ -25,6 +28,60 @@ class SessionRepository extends ChangeNotifier {
   static final SessionRepository instance = SessionRepository._internal();
 
   static const _kToken = 'parku_token';
+  // El JWT es una credencial de sesión (equivale a la contraseña mientras
+  // dura): en Android/iOS —las plataformas que de verdad se distribuyen—
+  // va al llavero cifrado del sistema (Keystore/Keychain), no a
+  // shared_preferences, que en Android es un XML plano legible por cualquiera
+  // con acceso al almacenamiento del dispositivo (root, backup, etc.).
+  static const _storage = FlutterSecureStorage();
+
+  // El llavero solo tiene sentido (y solo se prueba) en el celular. En
+  // escritorio/web —donde esta app solo se usa para desarrollar contra la
+  // API local, ver README— se sigue guardando con shared_preferences: en
+  // Linux, por ejemplo, el llavero depende de un servicio D-Bus (libsecret)
+  // que puede no existir (contenedores, CI) y la llamada se queda esperando
+  // en vez de fallar.
+  static bool get _conLlaveroSeguro => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+  Future<String?> _leerToken() async {
+    if (_conLlaveroSeguro) {
+      try {
+        return await _storage.read(key: _kToken);
+      } catch (_) {
+        return null;
+      }
+    }
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kToken);
+  }
+
+  Future<void> _guardarToken(String valor) async {
+    if (_conLlaveroSeguro) {
+      try {
+        await _storage.write(key: _kToken, value: valor);
+      } catch (_) {
+        // Sin persistencia la sesión sigue sirviendo mientras la app quede
+        // abierta: solo no sobrevivirá a un reinicio.
+      }
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kToken, valor);
+  }
+
+  Future<void> _borrarToken() async {
+    if (_conLlaveroSeguro) {
+      try {
+        await _storage.delete(key: _kToken);
+      } catch (_) {
+        // El estado en memoria ya se limpia en cerrarSesion(): que falle
+        // borrarlo del llavero no debe impedir cerrar sesión en la app.
+      }
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kToken);
+  }
 
   String? token;
   int? usuarioId;
@@ -53,8 +110,7 @@ class SessionRepository extends ChangeNotifier {
   ///   API. El token se conserva en disco para reintentar en el próximo
   ///   arranque, pero esta vez la app entra sin sesión.
   Future<EstadoSesion> restaurar() async {
-    final prefs = await SharedPreferences.getInstance();
-    final tokenGuardado = prefs.getString(_kToken);
+    final tokenGuardado = await _leerToken();
     if (tokenGuardado == null) return EstadoSesion.sinSesion;
 
     token = tokenGuardado;
@@ -87,8 +143,7 @@ class SessionRepository extends ChangeNotifier {
     ApiClient.instance.setToken(token);
     _aplicarUsuario(data['user'] as Map<String, dynamic>);
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kToken, token!);
+    await _guardarToken(token!);
 
     if (esConductor) await _resolverConductorId();
     notifyListeners();
@@ -152,8 +207,7 @@ class SessionRepository extends ChangeNotifier {
     conductorId = null;
     ApiClient.instance.setToken(null);
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kToken);
+    await _borrarToken();
     notifyListeners();
   }
 
