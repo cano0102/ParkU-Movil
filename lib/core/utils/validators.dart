@@ -105,6 +105,26 @@ class Validators {
     return null;
   }
 
+  /// Número de documento: solo dígitos, 6 a 10 (mismo rango que exige la API
+  /// al crear/buscar un conductor).
+  static String? documento(String? value) {
+    final texto = (value ?? '').trim();
+    if (texto.isEmpty) return 'Ingresa el número de documento';
+    if (!RegExp(r'^[0-9]{6,10}$').hasMatch(texto)) return 'Debe tener entre 6 y 10 dígitos';
+    return null;
+  }
+
+  /// Año/modelo del vehículo: opcional, pero si se ingresa debe ser un año
+  /// real (mismo rango 1950–año siguiente que valida el backend).
+  static String? anioVehiculo(String? value) {
+    final texto = (value ?? '').trim();
+    if (texto.isEmpty) return null;
+    final anio = int.tryParse(texto);
+    final limite = DateTime.now().year + 1;
+    if (anio == null || anio < 1950 || anio > limite) return 'Ingresa un año válido (1950–$limite)';
+    return null;
+  }
+
   /// Campo de texto libre obligatorio, con un tope de longitud razonable
   /// para no dejar guardar algo arbitrariamente largo.
   static String? requerido(String? value, String etiqueta, {int max = 60}) {

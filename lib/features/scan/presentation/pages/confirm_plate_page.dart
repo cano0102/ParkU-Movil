@@ -9,10 +9,18 @@ import '../../../../core/utils/validators.dart';
 import 'vehicle_authorized_page.dart';
 import 'vehicle_denied_page.dart';
 
+/// Cómo se obtuvo la placa que llega a esta pantalla: define qué tan
+/// confiable es mostrarla como "ya confirmada" antes de que el guarda la
+/// revise. No es una métrica real del OCR (ML Kit no expone una confianza
+/// por texto), así que en vez de inventar un porcentaje se muestra el origen
+/// real de la lectura.
+enum PlateSource { autoConfirmada, capturaUnica, manual }
+
 class ConfirmPlatePage extends StatefulWidget {
   final String placaDetectada;
+  final PlateSource origen;
 
-  const ConfirmPlatePage({super.key, required this.placaDetectada});
+  const ConfirmPlatePage({super.key, required this.placaDetectada, this.origen = PlateSource.autoConfirmada});
 
   @override
   State<ConfirmPlatePage> createState() => _ConfirmPlatePageState();
@@ -71,6 +79,22 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
     }
   }
 
+  /// Etiqueta honesta del origen de la lectura (no hay una confianza
+  /// numérica real que mostrar, ver [PlateSource]).
+  // Textos cortos a propósito (caben junto a "PLACA DETECTADA" incluso en
+  // pantallas angostas, como el iPhone SE de 320px que cubre el test de
+  // overflow): el mismo largo que tenía el badge fijo que reemplazan.
+  (String, ChipTone) get _etiquetaOrigen {
+    switch (widget.origen) {
+      case PlateSource.autoConfirmada:
+        return ('Confirmada', ChipTone.success);
+      case PlateSource.capturaUnica:
+        return ('Revisar', ChipTone.warning);
+      case PlateSource.manual:
+        return ('Digitada', ChipTone.info);
+    }
+  }
+
   Future<void> _verificar() async {
     if (_verificando) return;
     setState(() => _verificando = true);
@@ -80,7 +104,7 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
       if (vehiculo != null) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VehicleAuthorizedPage(vehicle: vehiculo)));
       } else {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa)));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VehicleDeniedPage(placa: _placa, tipo: _tipoSeleccionado)));
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -133,7 +157,7 @@ class _ConfirmPlatePageState extends State<ConfirmPlatePage> {
                                 child: Text('PLACA DETECTADA', style: AppTextStyles.overline, overflow: TextOverflow.ellipsis, maxLines: 1),
                               ),
                               const SizedBox(width: 8),
-                              const StatusChip(label: '98% confianza', tone: ChipTone.success),
+                              StatusChip(label: _etiquetaOrigen.$1, tone: _etiquetaOrigen.$2),
                             ],
                           ),
                           const SizedBox(height: 16),

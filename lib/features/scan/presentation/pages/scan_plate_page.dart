@@ -23,7 +23,13 @@ import 'confirm_plate_page.dart';
 /// "Digitar placa manualmente" sigue disponible para cuando la cámara no
 /// ayuda (placa sucia, de noche, permiso denegado, emulador...).
 class ScanPlatePage extends StatefulWidget {
-  const ScanPlatePage({super.key});
+  /// Si es `true`, al confirmar una placa la pantalla se cierra devolviendo
+  /// el texto con `Navigator.pop` en vez de continuar al asistente de
+  /// ingreso (`ConfirmPlatePage`). Lo usa, por ejemplo, "Registrar salida"
+  /// para buscar por placa el vehículo que está saliendo.
+  final bool soloDevolverPlaca;
+
+  const ScanPlatePage({super.key, this.soloDevolverPlaca = false});
 
   @override
   State<ScanPlatePage> createState() => _ScanPlatePageState();
@@ -264,13 +270,17 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
   // Acciones
   // ------------------------------------------------------------------
 
-  Future<void> _confirmar(String placa) async {
+  Future<void> _confirmar(String placa, {PlateSource origen = PlateSource.autoConfirmada}) async {
     if (_navegando) return;
     _navegando = true;
     await _detenerCamara();
     if (!mounted) return;
+    if (widget.soloDevolverPlaca) {
+      Navigator.of(context).pop(placa);
+      return;
+    }
     setState(() => _capturando = false);
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ConfirmPlatePage(placaDetectada: placa)));
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ConfirmPlatePage(placaDetectada: placa, origen: origen)));
     // Al volver (p. ej. "Repetir") se reanuda la lectura desde cero.
     if (!mounted) return;
     _navegando = false;
@@ -286,7 +296,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
     if (_capturando || _navegando) return;
     final vista = _ultimaLectura;
     if (vista != null) {
-      _confirmar(vista);
+      _confirmar(vista, origen: PlateSource.capturaUnica);
       return;
     }
     final controller = _camara;
@@ -302,7 +312,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
       final placa = PlateReader.extraer(texto.text);
       if (!mounted) return;
       if (placa != null) {
-        _confirmar(placa);
+        _confirmar(placa, origen: PlateSource.capturaUnica);
         return;
       }
       ScaffoldMessenger.of(
@@ -352,7 +362,7 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
     );
     if (placa == null || placa.trim().isEmpty) return;
     if (!mounted) return;
-    _confirmar(ParkingRepository.normaliza(placa));
+    _confirmar(ParkingRepository.normaliza(placa), origen: PlateSource.manual);
   }
 
   // ------------------------------------------------------------------
@@ -390,19 +400,19 @@ class _ScanPlatePageState extends State<ScanPlatePage> with SingleTickerProvider
                     child: Row(
                       children: [
                         GlassIconButton(icon: Icons.close_rounded, size: 42, onTap: () => Navigator.of(context).pop()),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             children: [
-                              Text(
+                              const Text(
                                 'Escanear placa',
                                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'Paso 1 de 3',
-                                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                                widget.soloDevolverPlaca ? 'Buscar vehículo por placa' : 'Paso 1 de 3',
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                               ),
                             ],
                           ),

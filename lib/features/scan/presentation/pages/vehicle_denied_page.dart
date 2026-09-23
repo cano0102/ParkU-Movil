@@ -3,14 +3,23 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
+import '../../../../core/models/vehicle.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../home/presentation/pages/home_shell.dart';
 import '../../../incidents/presentation/pages/report_incident_page.dart';
+import 'register_vehicle_page.dart';
 
 class VehicleDeniedPage extends StatelessWidget {
   final String placa;
+  final VehicleType tipo;
 
-  const VehicleDeniedPage({super.key, required this.placa});
+  const VehicleDeniedPage({super.key, required this.placa, required this.tipo});
+
+  void _registrarVehiculo(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RegisterVehiclePage(placaSugerida: placa, tipoSugerido: tipo)),
+    );
+  }
 
   Future<void> _registrarVisitante(BuildContext context) async {
     try {
@@ -104,9 +113,18 @@ class VehicleDeniedPage extends StatelessWidget {
                 const SectionHeader(title: '¿QUÉ DESEAS HACER?'),
                 const SizedBox(height: 10),
                 _OptionTile(
-                  icon: Icons.person_add_alt_1_rounded,
+                  icon: Icons.directions_car_filled_rounded,
                   iconColor: AppColors.primaryDark,
                   iconBackground: AppColors.primarySoft,
+                  label: 'Registrar vehículo nuevo',
+                  subtitle: 'Da de alta el vehículo y su conductor, y continúa a elegir celda',
+                  onTap: () => _registrarVehiculo(context),
+                ),
+                const SizedBox(height: 10),
+                _OptionTile(
+                  icon: Icons.person_add_alt_1_rounded,
+                  iconColor: AppColors.textSecondary,
+                  iconBackground: AppColors.neutralSoft,
                   label: 'Registrar como visitante',
                   subtitle: 'Permite el ingreso puntual y deja constancia',
                   onTap: () => _registrarVisitante(context),

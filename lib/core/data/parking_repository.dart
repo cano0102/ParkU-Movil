@@ -420,9 +420,7 @@ class ParkingRepository extends ChangeNotifier {
     required String color,
     required bool soatVigente,
   }) async {
-    final partes = marcaLinea.trim().split(RegExp(r'\s+'));
-    final marca = partes.isNotEmpty ? partes.first : marcaLinea;
-    final linea = partes.length > 1 ? partes.sublist(1).join(' ') : null;
+    final (marca, linea) = _separarMarcaLinea(marcaLinea);
 
     await ApiClient.instance.post(
       '/vehiculos',
@@ -440,6 +438,76 @@ class ParkingRepository extends ChangeNotifier {
     await _cargarOcupacionesDeMisVehiculos();
     await _cargarMisReservas();
     notifyListeners();
+  }
+
+  /// Busca un Conductor por documento exacto (`GET /conductores/documento`):
+  /// se usa desde portería para saber, antes de registrar un vehículo nuevo,
+  /// si su dueño ya existe en el sistema. `null` si no hay ninguno con ese
+  /// documento (la API responde 404).
+  Future<Map<String, dynamic>?> buscarConductorPorDocumento(String tipoDocumento, String numeroDocumento) async {
+    try {
+      final data = await ApiClient.instance.get(
+        '/conductores/documento',
+        query: {'tipo_documento': tipoDocumento, 'numero_documento': numeroDocumento.trim()},
+      );
+      return data is Map<String, dynamic> ? data : null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// Registra un vehículo nuevo detectado en portería (placa escaneada sin
+  /// ficha), a diferencia de [registrarVehiculo] que siempre lo asocia al
+  /// conductor con sesión activa. Aquí quien lo pide es un vigilante/admin,
+  /// identificando al dueño ya existente ([conductorId]) o pasando sus datos
+  /// para crearlo ([conductorNuevo]): igual que el asistente "Estacionar
+  /// vehículo" del panel web, `POST /vehiculos` crea el conductor y el
+  /// vehículo en la misma transacción cuando hace falta. Devuelve el
+  /// vehículo creado para poder continuar directo a elegir celda y
+  /// registrar el ingreso.
+  Future<Vehicle> registrarVehiculoDesdePortero({
+    required String placa,
+    required VehicleType tipo,
+    required String marcaLinea,
+    required String color,
+    int? modelo,
+    bool vehiculoSena = false,
+    int? conductorId,
+    Map<String, dynamic>? conductorNuevo,
+  }) async {
+    final (marca, linea) = _separarMarcaLinea(marcaLinea);
+    final data = await ApiClient.instance.post(
+      '/vehiculos',
+      body: {
+        'tipo': tipo.apiValue,
+        'placa': normaliza(placa),
+        'marca': marca,
+        'linea': ?linea,
+        'modelo': ?modelo,
+        'color': color,
+        'vehiculo_sena': vehiculoSena,
+        'conductor_id': ?conductorId,
+        'conductor': ?conductorNuevo,
+      },
+    );
+
+    // Igual que en `POST /vehiculos` desde el panel web, la respuesta ya
+    // trae el vehículo creado; si por lo que sea llegara vacío, se busca por
+    // placa antes de fallar (nunca se dejó de crear, solo faltó confirmarlo).
+    Vehicle? creado = data is Map<String, dynamic> && data['id'] != null ? Vehicle.fromJson(data) : null;
+    creado ??= await buscarVehiculo(placa);
+    if (creado == null) {
+      throw const ApiException('El vehículo se registró, pero no se pudo confirmar. Vuelve a escanear la placa.');
+    }
+    return _conDocumentoDeConductor(creado);
+  }
+
+  static (String, String?) _separarMarcaLinea(String marcaLinea) {
+    final partes = marcaLinea.trim().split(RegExp(r'\s+'));
+    final marca = partes.isNotEmpty ? partes.first : marcaLinea;
+    final linea = partes.length > 1 ? partes.sublist(1).join(' ') : null;
+    return (marca, linea);
   }
 
   /// Estadías de los vehículos del conductor (`/ocupaciones/vehiculo/:id`,
@@ -609,13 +677,16 @@ class ParkingRepository extends ChangeNotifier {
     return destino?.codigoConParqueadero ?? '—';
   }
 
-  Future<void> registrarSalida(String placa) async {
+  Future<void> registrarSalida(String placa, {String? descripcionSalida}) async {
     final vehiculo = await buscarVehiculo(placa);
     if (vehiculo == null || vehiculo.id == null) {
       throw const ApiException('No se encontró un vehículo registrado con esa placa.');
     }
 
-    await ApiClient.instance.post('/entradas-salidas/salida', body: {'vehiculo_id': vehiculo.id});
+    await ApiClient.instance.post(
+      '/entradas-salidas/salida',
+      body: {'vehiculo_id': vehiculo.id, 'descripcion_salida': ?descripcionSalida},
+    );
 
     final placaFormateada = formatea(vehiculo.placa);
     final celda = _celdaEnCache(placaFormateada);

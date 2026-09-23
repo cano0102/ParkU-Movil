@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../app/theme/colors.dart';
@@ -8,6 +6,7 @@ import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/parking_repository.dart';
 import '../../../../core/models/access_record.dart' show ParkedVehicle;
 import '../../../../core/network/api_exception.dart';
+import '../../../scan/presentation/pages/scan_plate_page.dart';
 
 class ExitRegisterPage extends StatefulWidget {
   const ExitRegisterPage({super.key});
@@ -54,18 +53,25 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
     });
   }
 
-  void _escanearRapido() {
-    final ocupadas = _repo.zonas.expand((z) => z.celdas).where((c) => c.esOcupada && c.placa != null).toList();
-    if (ocupadas.isEmpty) return;
-    final celda = ocupadas[Random().nextInt(ocupadas.length)];
-    _controller.text = ParkingRepository.normaliza(celda.placa!);
+  Future<void> _escanear() async {
+    final placa = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ScanPlatePage(soloDevolverPlaca: true)),
+    );
+    if (placa == null || !mounted) return;
+    _controller.text = ParkingRepository.normaliza(placa);
     _buscar(_controller.text);
   }
 
   Future<void> _confirmarSalida() async {
     if (_encontrado == null) return;
     try {
-      await _repo.registrarSalida(_encontrado!.placa);
+      // Las dos casillas de verificación quedan escritas en el registro de
+      // salida (no solo como estado local de la pantalla), igual que hace un
+      // guarda al anotar la novedad en el libro de portería.
+      final descripcion = _sinNovedades
+          ? 'Verificación en portería: placa coincide, sin novedades durante la permanencia.'
+          : 'Verificación en portería: placa coincide; posible novedad durante la permanencia (revisar).';
+      await _repo.registrarSalida(_encontrado!.placa, descripcionSalida: descripcion);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Salida registrada · ${ParkingRepository.formatea(ParkingRepository.normaliza(_encontrado!.placa))}')));
       Navigator.of(context).pop();
@@ -113,7 +119,7 @@ class _ExitRegisterPageState extends State<ExitRegisterPage> {
                           suffixIcon: IconButton(
                             tooltip: 'Escanear placa',
                             icon: const Icon(Icons.photo_camera_rounded, color: AppColors.primary),
-                            onPressed: _escanearRapido,
+                            onPressed: _escanear,
                           ),
                         ),
                       ),

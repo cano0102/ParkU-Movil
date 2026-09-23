@@ -5,6 +5,7 @@ import '../../../../app/theme/text_styles.dart';
 import '../../../../app/widgets/widgets.dart';
 import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -212,11 +213,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 hintText: '1234567890',
                                 prefixIcon: Icon(Icons.badge_outlined, color: AppColors.textPlaceholder),
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return 'Ingresa tu documento';
-                                if (v.trim().length < 6) return 'Documento inválido';
-                                return null;
-                              },
+                              validator: Validators.documento,
                             ),
                             const SizedBox(height: 16),
 
@@ -233,12 +230,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 hintText: 'nombre@sena.edu.co',
                                 prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textPlaceholder),
                               ),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
-                                final regex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
-                                if (!regex.hasMatch(v.trim())) return 'Correo inválido';
-                                return null;
-                              },
+                              validator: Validators.correo,
                             ),
                             const SizedBox(height: 16),
 
@@ -261,11 +253,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   onPressed: () => setState(() => _ocultarClave = !_ocultarClave),
                                 ),
                               ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-                                if (v.length < 6) return 'Mínimo 6 caracteres';
-                                return null;
-                              },
+                              validator: Validators.contrasenaNueva,
                             ),
                             const SizedBox(height: 16),
 
@@ -289,11 +277,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   onPressed: () => setState(() => _ocultarConfirmar = !_ocultarConfirmar),
                                 ),
                               ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) return 'Confirma tu contraseña';
-                                if (v != _claveController.text) return 'Las contraseñas no coinciden';
-                                return null;
-                              },
+                              validator: Validators.confirmarContrasena(_claveController),
                             ),
                             const SizedBox(height: 12),
 

@@ -20,6 +20,7 @@ dependencies:
   url_launcher: ^6.3.2
   camera: ^0.12.1
   google_mlkit_text_recognition: ^0.17.1
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:
