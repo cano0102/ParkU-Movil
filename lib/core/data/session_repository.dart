@@ -178,11 +178,23 @@ class SessionRepository extends ChangeNotifier {
     });
   }
 
-  /// POST /api/auth/recuperar-password — solicita el envío del correo con el
-  /// enlace de recuperación. La API responde igual exista o no la cuenta,
-  /// para no revelar qué correos están registrados.
-  Future<void> solicitarRecuperacion({required String correo}) {
-    return ApiClient.instance.post('/auth/recuperar-password', body: {'correo': correo});
+  /// POST /api/auth/verificar-identidad — no hay envío de correo: si el
+  /// correo, tipo/número de documento y nombre coinciden con una cuenta, la
+  /// API entrega de una vez, en la misma respuesta, un token de un solo uso
+  /// para fijar la contraseña nueva con [restablecerContrasena].
+  Future<String> verificarIdentidad({
+    required String correo,
+    required String tipoDocumento,
+    required String numeroDocumento,
+    required String nombre,
+  }) async {
+    final data = await ApiClient.instance.post('/auth/verificar-identidad', body: {
+      'correo': correo,
+      'tipoDocumento': tipoDocumento,
+      'numeroDocumento': numeroDocumento,
+      'nombre': nombre,
+    });
+    return data['token'] as String;
   }
 
   /// POST /api/auth/restablecer-password — consume el token recibido por

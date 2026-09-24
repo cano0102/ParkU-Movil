@@ -1,0 +1,37 @@
+name: Build APK
+
+# Compila el APK de release de ParkU-Movil. Los runners de GitHub Actions ya
+# traen Android SDK y Java instalados, así que no dependemos de descargarlos
+# en un entorno con red restringida.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Analizar
+        run: flutter analyze
+
+      - name: Compilar APK (release)
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parku-movil-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30

@@ -9,7 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parku_movil/core/models/parking_cell.dart';
 import 'package:parku_movil/core/models/parking_zone.dart';
 import 'package:parku_movil/core/models/vehicle.dart';
+import 'package:parku_movil/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:parku_movil/features/auth/presentation/pages/login.dart';
+import 'package:parku_movil/features/auth/presentation/pages/register.dart';
+import 'package:parku_movil/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:parku_movil/features/driver/presentation/pages/driver_history_page.dart';
 import 'package:parku_movil/features/driver/presentation/pages/driver_home_page.dart';
 import 'package:parku_movil/features/driver/presentation/pages/driver_reservations_page.dart';
@@ -85,6 +88,12 @@ void main() {
         'Introducción': const SplashPage(),
         'Bienvenida': const WelcomePage(),
         'Login': const LoginPage(),
+        'Crear cuenta': const RegisterPage(),
+        'Recuperar contraseña': const ForgotPasswordPage(),
+        'Restablecer contraseña (código manual)': const ResetPasswordPage(),
+        'Restablecer contraseña (token resuelto)': const ResetPasswordPage(
+          token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        ),
         'Inicio': const HomeDashboardPage(),
         'Escanear placa': const ScanPlatePage(),
         'Confirmar placa': const ConfirmPlatePage(placaDetectada: 'WGY482'),

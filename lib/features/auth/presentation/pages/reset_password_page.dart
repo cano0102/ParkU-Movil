@@ -7,12 +7,15 @@ import '../../../../core/data/session_repository.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/utils/validators.dart';
 
-/// Segundo paso del flujo de recuperación de contraseña (HU 02.2.8): se
-/// pega el token recibido por correo y se fija la nueva contraseña.
+/// Segundo paso del flujo de recuperación de contraseña (HU 02.2.8): fija la
+/// nueva contraseña con el token que entregó `verificar-identidad`. Si viene
+/// de [ForgotPasswordPage] el token ya llega resuelto (no hay correo que
+/// esperar); también se puede pegar uno a mano si la persona lo trae de otro
+/// lado.
 class ResetPasswordPage extends StatefulWidget {
-  final String? correo;
+  final String? token;
 
-  const ResetPasswordPage({super.key, this.correo});
+  const ResetPasswordPage({super.key, this.token});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -20,11 +23,13 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _tokenController = TextEditingController();
+  late final _tokenController = TextEditingController(text: widget.token ?? '');
   final _claveController = TextEditingController();
   final _confirmarController = TextEditingController();
   bool _ocultarClave = true;
   bool _cargando = false;
+
+  bool get _tokenResuelto => widget.token != null && widget.token!.isNotEmpty;
 
   @override
   void dispose() {
@@ -74,9 +79,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               Text('Restablecer contraseña', style: AppTextStyles.heading2),
               const SizedBox(height: 6),
               Text(
-                widget.correo != null && widget.correo!.isNotEmpty
-                    ? 'Copia el código del correo que enviamos a ${widget.correo} y elige tu nueva contraseña.'
-                    : 'Copia el código que recibiste por correo y elige tu nueva contraseña.',
+                _tokenResuelto
+                    ? 'Identidad verificada. Elige tu nueva contraseña.'
+                    : 'Pega el código de recuperación que obtuviste al verificar tu identidad y elige tu nueva contraseña.',
                 style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500, height: 1.4),
               ),
               const SizedBox(height: 26),
@@ -89,26 +94,28 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Código de recuperación', style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _tokenController,
-                        autocorrect: false,
-                        maxLines: 2,
-                        style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(
-                          hintText: 'Pega aquí el código del correo',
-                          prefixIcon: Icon(Icons.vpn_key_outlined, color: AppColors.textPlaceholder),
+                      if (!_tokenResuelto) ...[
+                        Text('Código de recuperación', style: AppTextStyles.label),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _tokenController,
+                          autocorrect: false,
+                          maxLines: 2,
+                          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                          decoration: const InputDecoration(
+                            hintText: 'Pega aquí el código de recuperación',
+                            prefixIcon: Icon(Icons.vpn_key_outlined, color: AppColors.textPlaceholder),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) return 'Ingresa el código recibido';
+                            // El backend genera el token con crypto.randomBytes(32).toString('hex'):
+                            // siempre 64 caracteres hexadecimales exactos.
+                            if (value.trim().length != 64) return 'El código no parece completo';
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return 'Ingresa el código recibido';
-                          // El backend genera el token con crypto.randomBytes(32).toString('hex'):
-                          // siempre 64 caracteres hexadecimales exactos.
-                          if (value.trim().length != 64) return 'El código no parece completo';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
                       Text('Nueva contraseña', style: AppTextStyles.label),
                       const SizedBox(height: 8),
                       TextFormField(

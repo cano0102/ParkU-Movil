@@ -315,7 +315,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     : const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text('Crear cuenta'),
+                                    Flexible(child: Text('Crear cuenta', overflow: TextOverflow.ellipsis)),
                                     SizedBox(width: 8),
                                     Icon(Icons.check_rounded, size: 20),
                                   ],
